@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Build binaries
+        run: |
+          mkdir -p dist
+
+          OS_ARCH=( "linux/amd64" "linux/arm64" "darwin/amd64" "darwin/arm64" )
+
+          for pair in "${OS_ARCH[@]}"; do
+            OS="${pair%/*}"
+            ARCH="${pair#*/}"
+
+            OUTPUT_NAME="opencode-telegram_${OS}_${ARCH}"
+
+            echo "Building for ${OS}/${ARCH}..."
+
+            if [ "$OS" = "windows" ]; then
+              OUTPUT_NAME="${OUTPUT_NAME}.exe"
+            fi
+
+            GOOS=$OS GOARCH=$ARCH go build -ldflags="-s -w" -o "dist/${OUTPUT_NAME}" .
+          done
+
+      - name: Create archives
+        run: |
+          cd dist
+          for f in opencode-telegram_*; do
+            tar -czf "${f}.tar.gz" "$f"
+          done
+          ls -la
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.tar.gz
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TAG_TOKEN }}
