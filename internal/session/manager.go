@@ -47,6 +47,14 @@ func (m *Manager) ResetSession(userID int64) {
 	m.store.Delete(userID)
 }
 
+func (m *Manager) ResetConversation(session *Session) {
+	if session != nil {
+		session.OpenCodeID = ""
+		session.IsNewSession = true
+		m.store.Set(session.UserID, session)
+	}
+}
+
 func (m *Manager) GetAgent(session *Session) string {
 	if session == nil {
 		return ""

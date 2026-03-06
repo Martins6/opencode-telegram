@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
+	"github.com/martins6/opencode-telegram/internal/session"
 )
 
 func RegisterHandlers(b *bot.Bot) {
@@ -16,6 +17,7 @@ func RegisterHandlers(b *bot.Bot) {
 	b.RegisterHandler(bot.HandlerTypeMessageText, "/set-provider", bot.MatchTypeExact, handleSetProvider)
 	b.RegisterHandler(bot.HandlerTypeMessageText, "/workspace", bot.MatchTypeExact, handleWorkspace)
 	b.RegisterHandler(bot.HandlerTypeMessageText, "/reset", bot.MatchTypeExact, handleReset)
+	b.RegisterHandler(bot.HandlerTypeMessageText, "/new-session", bot.MatchTypeExact, handleNewSession)
 }
 
 func handleStart(ctx context.Context, b *bot.Bot, update *models.Update) {
@@ -23,7 +25,7 @@ func handleStart(ctx context.Context, b *bot.Bot, update *models.Update) {
 		return
 	}
 
-	if !isUserAllowed(update.Message.From.ID) {
+	if !isUserAllowed(update.Message.From.ID, update.Message.From.Username) {
 		b.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID: update.Message.Chat.ID,
 			Text:   "You are not authorized to use this bot.",
@@ -42,7 +44,7 @@ func handleHelp(ctx context.Context, b *bot.Bot, update *models.Update) {
 		return
 	}
 
-	if !isUserAllowed(update.Message.From.ID) {
+	if !isUserAllowed(update.Message.From.ID, update.Message.From.Username) {
 		return
 	}
 
@@ -53,6 +55,7 @@ Available commands:
 /set-provider <provider> - Set LLM provider (e.g., anthropic, openai)
 /workspace <path> - Set workspace path
 /reset - Reset conversation history
+/new-session - Start a fresh conversation
 /help - Show this help message
 `
 
@@ -68,7 +71,8 @@ func handleSetAgent(ctx context.Context, b *bot.Bot, update *models.Update) {
 	}
 
 	userID := update.Message.From.ID
-	if !isUserAllowed(userID) {
+	username := update.Message.From.Username
+	if !isUserAllowed(userID, username) {
 		return
 	}
 
@@ -101,7 +105,8 @@ func handleSetModel(ctx context.Context, b *bot.Bot, update *models.Update) {
 	}
 
 	userID := update.Message.From.ID
-	if !isUserAllowed(userID) {
+	username := update.Message.From.Username
+	if !isUserAllowed(userID, username) {
 		return
 	}
 
@@ -134,7 +139,8 @@ func handleSetProvider(ctx context.Context, b *bot.Bot, update *models.Update) {
 	}
 
 	userID := update.Message.From.ID
-	if !isUserAllowed(userID) {
+	username := update.Message.From.Username
+	if !isUserAllowed(userID, username) {
 		return
 	}
 
@@ -167,7 +173,8 @@ func handleWorkspace(ctx context.Context, b *bot.Bot, update *models.Update) {
 	}
 
 	userID := update.Message.From.ID
-	if !isUserAllowed(userID) {
+	username := update.Message.From.Username
+	if !isUserAllowed(userID, username) {
 		return
 	}
 
@@ -200,7 +207,8 @@ func handleReset(ctx context.Context, b *bot.Bot, update *models.Update) {
 	}
 
 	userID := update.Message.From.ID
-	if !isUserAllowed(userID) {
+	username := update.Message.From.Username
+	if !isUserAllowed(userID, username) {
 		return
 	}
 
@@ -211,5 +219,39 @@ func handleReset(ctx context.Context, b *bot.Bot, update *models.Update) {
 	b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
 		Text:   "Conversation reset. Your settings have been cleared.",
+	})
+}
+
+func handleNewSession(ctx context.Context, b *bot.Bot, update *models.Update) {
+	if update.Message == nil {
+		return
+	}
+
+	userID := update.Message.From.ID
+	username := update.Message.From.Username
+	if !isUserAllowed(userID, username) {
+		return
+	}
+
+	sessionMgr := session.GetManager()
+	workspace := cfg.Workspace.Path
+
+	userSession, err := sessionMgr.GetSession(userID, workspace)
+	if err != nil {
+		log.Printf("Error getting session for user %d: %v", userID, err)
+		b.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: update.Message.Chat.ID,
+			Text:   "Error: Could not reset session. Please try again.",
+		})
+		return
+	}
+
+	sessionMgr.ResetConversation(userSession)
+
+	log.Printf("User %d started new session", userID)
+
+	b.SendMessage(ctx, &bot.SendMessageParams{
+		ChatID: update.Message.Chat.ID,
+		Text:   "New session started. Your next message will start a fresh conversation.",
 	})
 }
