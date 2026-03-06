@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/martins6/opencode-telegram/internal/config"
 	"github.com/martins6/opencode-telegram/internal/workspace"
 	"github.com/spf13/cobra"
 )
@@ -35,6 +36,10 @@ This will create:
 
 		if err := workspace.CreateTemplate(path); err != nil {
 			return fmt.Errorf("failed to create workspace: %w", err)
+		}
+
+		if _, err := config.Load(""); err != nil {
+			return fmt.Errorf("failed to create config: %w", err)
 		}
 
 		fmt.Printf("Workspace created at: %s\n", path)
