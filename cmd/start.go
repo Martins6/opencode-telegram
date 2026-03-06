@@ -11,22 +11,20 @@ import (
 	"github.com/martins6/opencode-telegram/internal/bot"
 	"github.com/martins6/opencode-telegram/internal/config"
 	"github.com/martins6/opencode-telegram/internal/logger"
-	"github.com/martins6/opencode-telegram/internal/opencode"
 	"github.com/martins6/opencode-telegram/internal/workspace"
 	"github.com/spf13/cobra"
 )
 
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: "Start bot + OpenCode server in workspace",
-	Long: `Starts the Telegram bot and OpenCode server in the configured workspace.
+	Short: "Start bot in workspace",
+	Long: `Starts the Telegram bot in the configured workspace.
 
 The bot will:
-1. Start the OpenCode server on the configured port
-2. Initialize the Telegram bot
-3. Handle incoming messages and media
+1. Initialize the Telegram bot
+2. Handle incoming messages using opencode run
 
-Press Ctrl+C to stop both the bot and server gracefully.`,
+Press Ctrl+C to stop the bot gracefully.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := config.Load("")
 		if err != nil {
@@ -50,17 +48,12 @@ Press Ctrl+C to stop both the bot and server gracefully.`,
 			log.Printf("Warning: Failed to initialize logger: %v", err)
 		}
 
-		log.Println("Starting OpenCode server...")
-		server := opencode.NewServer(cfg.OpenCode.Port, cfg.OpenCode.Password, workspacePath)
-		if err := server.Start(workspacePath); err != nil {
-			return fmt.Errorf("failed to start OpenCode server: %w", err)
-		}
+		logger.LogDebug("Logger initialized in workspace: %s", workspacePath)
 
 		log.Println("Initializing Telegram bot...")
 		bot.SetConfig(cfg)
 		telegramBot, err := bot.Initialize(cfg)
 		if err != nil {
-			server.Stop()
 			return fmt.Errorf("failed to initialize bot: %w", err)
 		}
 
@@ -72,7 +65,6 @@ Press Ctrl+C to stop both the bot and server gracefully.`,
 		defer cancel()
 
 		if err := bot.Start(ctx, telegramBot); err != nil {
-			server.Stop()
 			return fmt.Errorf("failed to start bot: %w", err)
 		}
 
@@ -87,8 +79,6 @@ Press Ctrl+C to stop both the bot and server gracefully.`,
 		if telegramBot != nil {
 			log.Println("Stopping Telegram bot...")
 		}
-
-		server.Stop()
 
 		logger.Close()
 

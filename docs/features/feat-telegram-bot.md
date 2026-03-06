@@ -9,6 +9,7 @@ Core Telegram bot that enables users to interact with OpenCode AI agent from Tel
 - Processes media uploads: photos, audio, voice, documents, videos
 - Implements slash commands: /set-agent, /set-model, /set-provider, /workspace, /help, /reset
 - Restricts access to users defined in allowed_users config
+- Supports both numeric user IDs and usernames in allowed_users (e.g., ["123456789", "username123"])
 - Manages per-user conversation sessions and history
 - Integrates with embedded OpenCode server
 - Provides configuration management via config.toml
