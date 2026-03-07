@@ -1,9 +1,12 @@
-# OpenCode Telegram Agent
+# OpenCode Telegram Agent v0.1.0
 
 A Telegram bot that acts as a gateway to an OpenCode server, allowing users to interact with the OpenCode AI agent directly from Telegram.
 
-## Features
+## Current State (v0.1.0)
 
+This is the initial release with core functionality:
+
+- **Full Function Connection**: Connect to a friendly AI agent via Telegram using the OpenCode harness
 - **Text Messaging**: Send and receive messages from OpenCode
 - **Media Support**: Handle images, audio, voice messages, documents, and videos
 - **Slash Commands**: Configure agents, models, providers, and workspace
@@ -12,12 +15,19 @@ A Telegram bot that acts as a gateway to an OpenCode server, allowing users to i
 - **Structured Logging**: Daily log files with 30-day retention
 - **Graceful Shutdown**: Clean process termination
 
+### What's NOT included yet (future releases)
+
+- Memory/persistence across sessions
+- Heartbeat/keepalive mechanisms
+
 ## Installation
 
 ### Prerequisites
 
-- Go 1.21+
-- OpenCode CLI installed (`opencode` command available)
+**Both OpenCode CLI AND this binary are required to run the bot.**
+
+- [OpenCode CLI](https://github.com/anomalyco/opencode) installed (`opencode` command available)
+- Go 1.21+ (only required for local development/build from source)
 
 ### Build
 
@@ -54,8 +64,22 @@ curl -sSL https://raw.githubusercontent.com/martins6/opencode-telegram/main/inst
 Install a specific version:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/martins6/opencode-telegram/main/install.sh | bash -s -- -v v1.0.0
+curl -sSL https://raw.githubusercontent.com/martins6/opencode-telegram/main/install.sh | bash -s -- -v v0.1.0
 ```
+
+### Development Installation (local_install.sh)
+
+For developers who want to build from source, use `local_install.sh`:
+
+```bash
+./local_install.sh
+```
+
+**Requirements:**
+- Go 1.21+ installed
+- OpenCode CLI installed (`opencode` command available)
+
+This script builds the binary from local source code instead of downloading from GitHub releases.
 
 ## Quick Start
 
