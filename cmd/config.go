@@ -23,10 +23,19 @@ var configSetCmd = &cobra.Command{
 		key := args[0]
 		value := args[1]
 
-		viper.Set(key, value)
-
 		homeDir, _ := os.UserHomeDir()
 		configPath := fmt.Sprintf("%s/.opencode-telegram/config.toml", homeDir)
+
+		viper.SetConfigType("toml")
+		viper.SetConfigFile(configPath)
+		if err := viper.ReadInConfig(); err != nil {
+			if !os.IsNotExist(err) {
+				return fmt.Errorf("failed to read config: %w", err)
+			}
+		}
+
+		viper.Set(key, value)
+
 		if err := viper.WriteConfigAs(configPath); err != nil {
 			return fmt.Errorf("failed to save config: %w", err)
 		}
