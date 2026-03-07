@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -34,7 +35,16 @@ var configSetCmd = &cobra.Command{
 			}
 		}
 
-		viper.Set(key, value)
+		var parsedValue interface{}
+		if err := json.Unmarshal([]byte(value), &parsedValue); err == nil {
+			if arr, ok := parsedValue.([]interface{}); ok {
+				viper.Set(key, arr)
+			} else {
+				viper.Set(key, value)
+			}
+		} else {
+			viper.Set(key, value)
+		}
 
 		if err := viper.WriteConfigAs(configPath); err != nil {
 			return fmt.Errorf("failed to save config: %w", err)
