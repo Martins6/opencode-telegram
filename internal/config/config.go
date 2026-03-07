@@ -10,7 +10,6 @@ import (
 type Config struct {
 	Bot       BotConfig       `mapstructure:"bot"`
 	Workspace WorkspaceConfig `mapstructure:"workspace"`
-	OpenCode  OpenCodeConfig  `mapstructure:"opencode"`
 	Defaults  DefaultsConfig  `mapstructure:"defaults"`
 }
 
@@ -21,11 +20,6 @@ type BotConfig struct {
 
 type WorkspaceConfig struct {
 	Path string `mapstructure:"path"`
-}
-
-type OpenCodeConfig struct {
-	Port     string `mapstructure:"port"`
-	Password string `mapstructure:"password"`
 }
 
 type DefaultsConfig struct {
@@ -48,8 +42,6 @@ func Load(cfgFile string) (*Config, error) {
 	viper.SetDefault("bot.token", "")
 	viper.SetDefault("bot.allowed_users", []string{})
 	viper.SetDefault("workspace.path", filepath.Join(homeDir, ".opencode-telegram"))
-	viper.SetDefault("opencode.port", "4096")
-	viper.SetDefault("opencode.password", "")
 	viper.SetDefault("defaults.agent", "telegram-agent")
 	viper.SetDefault("defaults.model", "MiniMax-M2.5")
 	viper.SetDefault("defaults.provider", "minimax-coding-plan")

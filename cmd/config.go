@@ -81,7 +81,6 @@ var configListCmd = &cobra.Command{
 		fmt.Printf("Bot Token: %s\n", cfg.Bot.Token)
 		fmt.Printf("Allowed Users: %v\n", cfg.Bot.AllowedUsers)
 		fmt.Printf("Workspace Path: %s\n", cfg.Workspace.Path)
-		fmt.Printf("OpenCode Port: %s\n", cfg.OpenCode.Port)
 		fmt.Printf("Default Agent: %s\n", cfg.Defaults.Agent)
 		fmt.Printf("Default Model: %s\n", cfg.Defaults.Model)
 		fmt.Printf("Default Provider: %s\n", cfg.Defaults.Provider)
