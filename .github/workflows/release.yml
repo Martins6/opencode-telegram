@@ -45,7 +45,9 @@ jobs:
         run: |
           cd dist
           for f in opencode-telegram_*; do
-            tar -czf "${f}.tar.gz" "$f"
+            base="${f%_*_*}"
+            mv "$f" "$base"
+            tar -czf "${base}.tar.gz" "$base"
           done
           ls -la
 
