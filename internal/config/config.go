@@ -51,8 +51,8 @@ func Load(cfgFile string) (*Config, error) {
 	viper.SetDefault("opencode.port", "4096")
 	viper.SetDefault("opencode.password", "")
 	viper.SetDefault("defaults.agent", "telegram-agent")
-	viper.SetDefault("defaults.model", "MiniMax2.5")
-	viper.SetDefault("defaults.provider", "minimax")
+	viper.SetDefault("defaults.model", "MiniMax-M2.5")
+	viper.SetDefault("defaults.provider", "minimax-coding-plan")
 
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
