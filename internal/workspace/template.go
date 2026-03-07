@@ -26,12 +26,12 @@ func CreateTemplate(workspacePath string) error {
 	}
 
 	files := map[string]string{
-		"AGENTS.md":    AgentsContent,
-		"SOUL.md":      SoulContent,
-		"USER.md":      UserContent,
-		"IDENTITY.md":  IdentityContent,
-		"BOOTSTRAP.md": BootstrapContent,
-		"TOOLS.md":     ToolsContent,
+		"opencode.json": OpenCodeConfigContent,
+		"SOUL.md":       SoulContent,
+		"USER.md":       UserContent,
+		"IDENTITY.md":   IdentityContent,
+		"BOOTSTRAP.md":  BootstrapContent,
+		"TOOLS.md":      ToolsContent,
 	}
 
 	for filename, content := range files {

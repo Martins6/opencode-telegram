@@ -80,7 +80,10 @@ func (r *Runner) Execute(sessionID, message string) (*RunResult, error) {
 	}
 
 	output := stdout.String()
-	logger.LogDebug("Opencode run output: %s", truncate(output, 500))
+	if len(output) > 500 {
+		output = output[:500]
+	}
+	logger.LogDebug("Opencode run output: %s", output)
 
 	return r.parseOutput(output)
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 
 	"github.com/go-telegram/bot"
@@ -214,13 +213,9 @@ func isUserAllowed(userID int64, username string) bool {
 		return true
 	}
 
+	userIDStr := fmt.Sprintf("%d", userID)
 	for _, allowed := range cfg.Bot.AllowedUsers {
-		if parsedID, err := strconv.ParseInt(allowed, 10, 64); err == nil {
-			if parsedID == userID {
-				return true
-			}
-		}
-		if username != "" && allowed == username {
+		if allowed == userIDStr || (username != "" && allowed == username) {
 			return true
 		}
 	}

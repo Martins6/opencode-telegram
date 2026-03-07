@@ -3,3 +3,5 @@
 2026-03-05-22-00 | Added username support to allowed_users configuration
 2026-03-06-14-00 | Added opencode run integration feature switching from HTTP server to direct command execution
 2026-03-06-14-00 | Added progress updates feature for long-running operations
+2026-03-07-00-00 | Added telegram-agent feature with custom opencode.json configuration
+2026-03-07-00-00 | Added improved default prompts feature for workspace template files

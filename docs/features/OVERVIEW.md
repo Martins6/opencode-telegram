@@ -8,3 +8,5 @@ Telegram bot gateway that allows users to interact with an OpenCode AI agent dir
 - feat-install-script.md - Installation script for easy binary deployment
 - feat-opencode-run-integration.md - OpenCode run command integration replacing HTTP server
 - feat-progress-updates.md - Progress updates for long-running operations
+- feat-telegram-agent.md - Custom telegram-agent in opencode.json configuration
+- feat-default-prompts.md - Improved default prompts for workspace template files
