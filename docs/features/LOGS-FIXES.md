@@ -1,4 +1,6 @@
 2026-03-07-14-30 | Fixed JSONL parsing issue where embedded newlines in JSON string values caused "No response from OpenCode" errors
+2026-03-07-14-45 | Removed /reset command - use /new-session to reset conversation while keeping user settings
+2026-03-07-14-45 | Removed log truncation to capture full OpenCode output without character limits
 2026-03-05-21-40 | Fixed config.toml not being created when running `opencode-telegram new` command
 2026-03-05-22-00 | Fixed config set command overwriting entire config file instead of merging
 2026-03-05-22-00 | Fixed allowed_users config array parsing issue with JSON array strings

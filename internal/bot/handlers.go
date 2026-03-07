@@ -54,7 +54,7 @@ func DefaultHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 		return
 	}
 
-	logger.Log(logger.INPUT, userID, fmt.Sprintf("Message: %s", truncate(update.Message.Text, 100)))
+	logger.Log(logger.INPUT, userID, fmt.Sprintf("Message: %s", update.Message.Text))
 
 	chatID := update.Message.Chat.ID
 	workspace := cfg.Workspace.Path
@@ -144,7 +144,7 @@ func DefaultHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 		responseText = "No response from OpenCode."
 	}
 
-	logger.Log(logger.OUTPUT, userID, fmt.Sprintf("Response: %s", truncate(responseText, 100)))
+	logger.Log(logger.OUTPUT, userID, fmt.Sprintf("Response: %s", responseText))
 
 	const maxMessageLength = 4000
 	if len(responseText) > maxMessageLength {
@@ -199,13 +199,6 @@ func extractResponseText(resp *opencode.MessageResponse) string {
 		}
 	}
 	return text
-}
-
-func truncate(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen]
 }
 
 func isUserAllowed(userID int64, username string) bool {

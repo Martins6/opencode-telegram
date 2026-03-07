@@ -16,7 +16,6 @@ func RegisterHandlers(b *bot.Bot) {
 	b.RegisterHandler(bot.HandlerTypeMessageText, "/set-model", bot.MatchTypeExact, handleSetModel)
 	b.RegisterHandler(bot.HandlerTypeMessageText, "/set-provider", bot.MatchTypeExact, handleSetProvider)
 	b.RegisterHandler(bot.HandlerTypeMessageText, "/workspace", bot.MatchTypeExact, handleWorkspace)
-	b.RegisterHandler(bot.HandlerTypeMessageText, "/reset", bot.MatchTypeExact, handleReset)
 	b.RegisterHandler(bot.HandlerTypeMessageText, "/new-session", bot.MatchTypeExact, handleNewSession)
 }
 
@@ -54,7 +53,6 @@ Available commands:
 /set-model <model> - Set LLM model (e.g., claude-sonnet-4-5)
 /set-provider <provider> - Set LLM provider (e.g., anthropic, openai)
 /workspace <path> - Set workspace path
-/reset - Reset conversation history
 /new-session - Start a fresh conversation
 /help - Show this help message
 `
@@ -198,27 +196,6 @@ func handleWorkspace(ctx context.Context, b *bot.Bot, update *models.Update) {
 	b.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID: update.Message.Chat.ID,
 		Text:   "Workspace set to: " + workspace,
-	})
-}
-
-func handleReset(ctx context.Context, b *bot.Bot, update *models.Update) {
-	if update.Message == nil {
-		return
-	}
-
-	userID := update.Message.From.ID
-	username := update.Message.From.Username
-	if !isUserAllowed(userID, username) {
-		return
-	}
-
-	delete(userSettings, userID)
-
-	log.Printf("User %d reset conversation", userID)
-
-	b.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: update.Message.Chat.ID,
-		Text:   "Conversation reset. Your settings have been cleared.",
 	})
 }
 

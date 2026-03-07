@@ -165,7 +165,6 @@ provider = "minimax"
 | `/set-provider` | Set LLM provider   | `/set-provider anthropic`      |
 | `/workspace`    | Set workspace path | `/workspace /path/to/folder`   |
 | `/help`         | Show help          |                                |
-| `/reset`        | Reset conversation |                                |
 
 ### 2. Media Handling Flow
 

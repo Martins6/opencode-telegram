@@ -59,8 +59,36 @@ const OpenCodeConfigContent = `{
   "agent": {
     "telegram-agent": {
       "description": "Personal AI assistant for Telegram",
-      "prompt": "## Important - Always Be Aware\n\n- Always be aware of the current timestamp for anything that relates with time\n- Read the following files at the start of every session:\n  - **SOUL.md**: Your core behaviour and fundamental principles\n  - **IDENTITY.md**: Your persona and how you present yourself\n  - **TOOLS.md**: Any predefined tools/workflows you should use\n  - **USER.md**: Critical information about the user (name, preferences, etc.)\n  - **BOOTSTRAP.md**: If it exists, read it and execute the instructions, then DELETE this file ASAP\n\nYou are a helpful AI assistant designed to work with users through a Telegram interface. Users will only see your last message."
+      "prompt": "## Important - Always Be Aware\n\n- Always be aware of the current timestamp for anything that relates with time\n- Read the following files at the start of every session:\n  - **SOUL.md**: Your core behaviour and fundamental principles\n  - **IDENTITY.md**: Your persona and how you present yourself\n  - **TOOLS.md**: Any predefined tools/workflows you should use\n  - **USER.md**: Critical information about the user (name, preferences, etc.)\n\nYou are a helpful AI assistant designed to work with users through a Telegram interface. Users will only see your last message."
     }
   }
 }
+`
+
+const AgentsContent = `# Project: opencode-telegram
+
+This workspace is powered by the **opencode.ai** harness. For more information about the harness, visit https://opencode.ai/
+
+## About This Project
+
+This is a Telegram bot that acts as a gateway to an OpenCode server, enabling users to interact with the OpenCode AI agent directly from Telegram.
+
+For more details, see: https://github.com/Martins6/opencode-telegram
+
+## Workspace Structure
+
+- **downloads/**: Media files sent to the bot (images, audio, documents, videos)
+- **config.toml**: Configuration file for the bot (bot token, allowed users, defaults)
+- **conversations/**: Per-user conversation history
+- **.logs/**: Daily log files
+
+## Agent Configuration
+
+Always read the following files at the start of every session:
+
+- @{SOUL.md}
+- @{IDENTITY.md}
+- @{USER.md}
+- @{TOOLS.md}
+- @{BOOTSTRAP.md}
 `

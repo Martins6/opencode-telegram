@@ -79,16 +79,9 @@ func (r *Runner) Execute(sessionID, message string) (*RunResult, error) {
 	}
 
 	output := stdout.String()
-	logger.LogDebug("Opencode run output: %s", truncateForLog(output, 500))
+	logger.LogDebug("Opencode run output: %s", output)
 
 	return r.parseOutput(output)
-}
-
-func truncateForLog(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen]
 }
 
 func (r *Runner) parseOutput(output string) (*RunResult, error) {

@@ -32,6 +32,7 @@ func CreateTemplate(workspacePath string) error {
 		"IDENTITY.md":   IdentityContent,
 		"BOOTSTRAP.md":  BootstrapContent,
 		"TOOLS.md":      ToolsContent,
+		"AGENTS.md":     AgentsContent,
 	}
 
 	for filename, content := range files {

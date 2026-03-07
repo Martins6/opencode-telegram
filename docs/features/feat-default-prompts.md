@@ -9,7 +9,8 @@ Improves the default markdown templates created when running `opencode-telegram 
 - Updates USER.md: Empty template for user information storage
 - Updates TOOLS.md: Empty placeholder for future tool instructions
 - Updates BOOTSTRAP.md: Greets warmly with emojis, asks setup questions, deletes self after execution
-- Removes detailed AGENTS.md (replaced by opencode.json)
+- Adds AGENTS.md: References personality files using @{FILE} syntax, documents workspace structure
+- Removes detailed AGENTS.md (replaced by opencode.json) - later added back as lightweight reference
 - Simplifies tools documentation
 
 # File Paths
