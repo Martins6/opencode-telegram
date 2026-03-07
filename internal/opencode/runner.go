@@ -1,7 +1,6 @@
 package opencode
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -80,27 +79,26 @@ func (r *Runner) Execute(sessionID, message string) (*RunResult, error) {
 	}
 
 	output := stdout.String()
-	if len(output) > 500 {
-		output = output[:500]
-	}
-	logger.LogDebug("Opencode run output: %s", output)
+	logger.LogDebug("Opencode run output: %s", truncateForLog(output, 500))
 
 	return r.parseOutput(output)
 }
 
+func truncateForLog(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen]
+}
+
 func (r *Runner) parseOutput(output string) (*RunResult, error) {
 	result := &RunResult{}
-	scanner := bufio.NewScanner(strings.NewReader(output))
+	decoder := json.NewDecoder(strings.NewReader(output))
 
-	for scanner.Scan() {
-		line := scanner.Text()
-		if line == "" {
-			continue
-		}
-
+	for decoder.More() {
 		var event map[string]json.RawMessage
-		if err := json.Unmarshal([]byte(line), &event); err != nil {
-			logger.LogDebug("Failed to parse JSON line: %s", line)
+		if err := decoder.Decode(&event); err != nil {
+			logger.LogDebug("Failed to decode JSON: %v", err)
 			continue
 		}
 
@@ -143,10 +141,6 @@ func (r *Runner) parseOutput(output string) (*RunResult, error) {
 				result.ResponseText += text
 			}
 		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		logger.LogDebug("Scanner error: %v", err)
 	}
 
 	if result.SessionID == "" && result.ResponseText == "" {

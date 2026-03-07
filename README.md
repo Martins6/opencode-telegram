@@ -148,10 +148,6 @@ allowed_users = [123456789]
 [workspace]
 path = "~/.opencode-telegram/"
 
-[opencode]
-port = "4096"
-password = ""
-
 [defaults]
 agent = "coder"
 model = "MiniMax2.5"
