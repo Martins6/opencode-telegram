@@ -6,3 +6,4 @@
 2026-03-07-00-00 | Added telegram-agent feature with custom opencode.json configuration
 2026-03-07-00-00 | Added improved default prompts feature for workspace template files
 2026-03-07-14-00 | Added AGENTS.md to workspace template with personality file references
+2026-03-07-14-30 | Added MAIN-PROMPTS folder reorganization for better workspace template structure

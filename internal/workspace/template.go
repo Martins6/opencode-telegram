@@ -16,6 +16,7 @@ func CreateTemplate(workspacePath string) error {
 		".logs",
 		".opencode/agents",
 		".opencode/skills",
+		"MAIN-PROMPTS",
 	}
 
 	for _, dir := range dirs {
@@ -26,13 +27,13 @@ func CreateTemplate(workspacePath string) error {
 	}
 
 	files := map[string]string{
-		"opencode.json": OpenCodeConfigContent,
-		"SOUL.md":       SoulContent,
-		"USER.md":       UserContent,
-		"IDENTITY.md":   IdentityContent,
-		"BOOTSTRAP.md":  BootstrapContent,
-		"TOOLS.md":      ToolsContent,
-		"AGENTS.md":     AgentsContent,
+		"opencode.json":             OpenCodeConfigContent,
+		"MAIN-PROMPTS/SOUL.md":      SoulContent,
+		"MAIN-PROMPTS/USER.md":      UserContent,
+		"MAIN-PROMPTS/IDENTITY.md":  IdentityContent,
+		"MAIN-PROMPTS/BOOTSTRAP.md": BootstrapContent,
+		"MAIN-PROMPTS/TOOLS.md":     ToolsContent,
+		"AGENTS.md":                 AgentsContent,
 	}
 
 	for filename, content := range files {

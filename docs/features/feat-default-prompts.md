@@ -12,7 +12,11 @@ Improves the default markdown templates created when running `opencode-telegram 
 - Adds AGENTS.md: References personality files using @{FILE} syntax, documents workspace structure
 - Removes detailed AGENTS.md (replaced by opencode.json) - later added back as lightweight reference
 - Simplifies tools documentation
+- Reorganizes prompt files into MAIN-PROMPTS/ subdirectory for better structure
+- Updates opencode.json to use native `instructions` field with glob pattern `MAIN-PROMPTS/*.md`
+- Updates AGENTS.md to reference files in MAIN-PROMPTS/ directory
 
 # File Paths
 
 - internal/workspace/files.go
+- internal/workspace/template.go

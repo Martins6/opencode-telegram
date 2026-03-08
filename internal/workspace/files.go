@@ -33,7 +33,7 @@ You are a personal assistant, friendly and helpful. You use emojis but not exces
 
 const BootstrapContent = `# Bootstrap Setup
 
-Welcome! Let's get to know each other better :)
+If you're reading this, then the user has just started fresh the experience of opencode-telegram. Guide him with your mission below.
 
 ## Your Mission
 
@@ -45,7 +45,7 @@ Welcome! Let's get to know each other better :)
 3. **Save my answers** to the respective files
 4. **Delete this BOOTSTRAP.md file** once we're done
 
-Let's start! 
+Let's start!
 `
 
 const ToolsContent = `# Tools
@@ -55,11 +55,12 @@ const ToolsContent = `# Tools
 
 const OpenCodeConfigContent = `{
   "$schema": "https://opencode.ai/config.json",
+  "instructions": ["MAIN-PROMPTS/*.md"],
   "default_agent": "telegram-agent",
   "agent": {
     "telegram-agent": {
       "description": "Personal AI assistant for Telegram",
-      "prompt": "## Important - Always Be Aware\n\n- Always be aware of the current timestamp for anything that relates with time\n- Read the following files at the start of every session:\n  - **SOUL.md**: Your core behaviour and fundamental principles\n  - **IDENTITY.md**: Your persona and how you present yourself\n  - **TOOLS.md**: Any predefined tools/workflows you should use\n  - **USER.md**: Critical information about the user (name, preferences, etc.)\n\nYou are a helpful AI assistant designed to work with users through a Telegram interface. Users will only see your last message."
+      "prompt": "## Important - Always Be Aware\n\n- Always be aware of the current timestamp for anything that relates with time\n\nYou are a helpful AI assistant designed to work with users through a Telegram interface. Users will only see your last message."
     }
   }
 }
@@ -77,6 +78,12 @@ For more details, see: https://github.com/Martins6/opencode-telegram
 
 ## Workspace Structure
 
+- **MAIN-PROMPTS/**: Core instruction files loaded via OpenCode's instructions field
+  - **SOUL.md**: Core behaviour and fundamental principles
+  - **IDENTITY.md**: Your persona and how you present yourself
+  - **TOOLS.md**: Any predefined tools/workflows you should use
+  - **USER.md**: Critical information about the user
+  - **BOOTSTRAP.md**: First-time setup instructions
 - **downloads/**: Media files sent to the bot (images, audio, documents, videos)
 - **config.toml**: Configuration file for the bot (bot token, allowed users, defaults)
 - **conversations/**: Per-user conversation history
@@ -84,11 +91,5 @@ For more details, see: https://github.com/Martins6/opencode-telegram
 
 ## Agent Configuration
 
-Always read the following files at the start of every session:
-
-- @{SOUL.md}
-- @{IDENTITY.md}
-- @{USER.md}
-- @{TOOLS.md}
-- @{BOOTSTRAP.md}
+All instruction files in MAIN-PROMPTS/ are automatically loaded by OpenCode via the instructions field in opencode.json.
 `
