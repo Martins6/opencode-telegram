@@ -1,3 +1,4 @@
+2026-03-09-12-01 | Added notify, mail, and cron features with SQLite-based notification system
 2026-03-05-21-40 | Added Telegram bot core feature with message handling, media processing, and user whitelist
 2026-03-05-21-40 | Added install script feature for easy binary deployment via curl
 2026-03-05-22-00 | Added username support to allowed_users configuration

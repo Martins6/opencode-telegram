@@ -68,6 +68,10 @@ Press Ctrl+C to stop the bot gracefully.`,
 			return fmt.Errorf("failed to start bot: %w", err)
 		}
 
+		if err := bot.StartNotifier(ctx, telegramBot); err != nil {
+			log.Printf("Warning: Failed to start notifier service: %v", err)
+		}
+
 		log.Println("Bot is running. Press Ctrl+C to stop.")
 
 		sigChan := make(chan os.Signal, 1)

@@ -11,6 +11,7 @@ type Config struct {
 	Bot       BotConfig       `mapstructure:"bot"`
 	Workspace WorkspaceConfig `mapstructure:"workspace"`
 	Defaults  DefaultsConfig  `mapstructure:"defaults"`
+	Mail      MailConfig      `mapstructure:"mail"`
 }
 
 type BotConfig struct {
@@ -26,6 +27,15 @@ type DefaultsConfig struct {
 	Agent    string `mapstructure:"agent"`
 	Model    string `mapstructure:"model"`
 	Provider string `mapstructure:"provider"`
+}
+
+type MailConfig struct {
+	UrgencyTiming UrgencyTimingConfig `mapstructure:"urgency_timing"`
+}
+
+type UrgencyTimingConfig struct {
+	MediumHours int `mapstructure:"medium_hours"`
+	LowHours    int `mapstructure:"low_hours"`
 }
 
 var globalConfig *Config
@@ -45,6 +55,8 @@ func Load(cfgFile string) (*Config, error) {
 	viper.SetDefault("defaults.agent", "telegram-agent")
 	viper.SetDefault("defaults.model", "MiniMax-M2.5")
 	viper.SetDefault("defaults.provider", "minimax-coding-plan")
+	viper.SetDefault("mail.urgency_timing.medium_hours", 1)
+	viper.SetDefault("mail.urgency_timing.low_hours", 24)
 
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
