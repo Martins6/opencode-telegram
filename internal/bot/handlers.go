@@ -9,6 +9,7 @@ import (
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 	"github.com/martins6/opencode-telegram/internal/config"
+	"github.com/martins6/opencode-telegram/internal/database"
 	"github.com/martins6/opencode-telegram/internal/logger"
 	"github.com/martins6/opencode-telegram/internal/opencode"
 	"github.com/martins6/opencode-telegram/internal/session"
@@ -45,6 +46,12 @@ func DefaultHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 			Text:   "You are not authorized to use this bot.",
 		})
 		return
+	}
+
+	if username != "" && cfg.Bot.AllowedUserID == username {
+		if err := database.SetResolvedChatID(username, userID); err != nil {
+			log.Printf("Failed to store resolved chat ID for user %s: %v", username, err)
+		}
 	}
 
 	log.Printf("Received message from user %d: %s", userID, update.Message.Text)
@@ -92,7 +99,7 @@ func DefaultHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 	}
 
 	if model == "" {
-		model = "MiniMax-M2.5"
+		model = "MiniMax-M2.7"
 	}
 	if provider == "" {
 		provider = "minimax-coding-plan"
@@ -202,15 +209,14 @@ func extractResponseText(resp *opencode.MessageResponse) string {
 }
 
 func isUserAllowed(userID int64, username string) bool {
-	if cfg == nil || len(cfg.Bot.AllowedUsers) == 0 {
-		return true
+	if cfg == nil {
+		return false
+	}
+
+	if cfg.Bot.AllowedUserID == "" {
+		return false
 	}
 
 	userIDStr := fmt.Sprintf("%d", userID)
-	for _, allowed := range cfg.Bot.AllowedUsers {
-		if allowed == userIDStr || (username != "" && allowed == username) {
-			return true
-		}
-	}
-	return false
+	return cfg.Bot.AllowedUserID == userIDStr || cfg.Bot.AllowedUserID == username
 }

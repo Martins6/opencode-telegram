@@ -1,6 +1,8 @@
 # Build artifacts
 dist/
 
+.sbeads/
+
 # IDE
 .idea/
 .vscode/

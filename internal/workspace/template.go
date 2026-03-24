@@ -2,8 +2,11 @@ package workspace
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/martins6/opencode-telegram/skills"
 )
 
 func CreateTemplate(workspacePath string) error {
@@ -45,7 +48,41 @@ func CreateTemplate(workspacePath string) error {
 		}
 	}
 
+	if err := copySkills(workspacePath); err != nil {
+		return fmt.Errorf("failed to copy skills: %w", err)
+	}
+
 	return nil
+}
+
+func copySkills(workspacePath string) error {
+	skillsDir := filepath.Join(workspacePath, ".opencode", "skills")
+
+	return fs.WalkDir(skills.FS, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			return nil
+		}
+
+		if filepath.Ext(path) != ".md" {
+			return nil
+		}
+
+		content, err := fs.ReadFile(skills.FS, path)
+		if err != nil {
+			return fmt.Errorf("failed to read skill file %s: %w", path, err)
+		}
+
+		destPath := filepath.Join(skillsDir, filepath.Base(path))
+		if err := os.WriteFile(destPath, content, 0644); err != nil {
+			return fmt.Errorf("failed to write skill file %s: %w", path, err)
+		}
+
+		return nil
+	})
 }
 
 func ValidateWorkspace(workspacePath string) error {

@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/martins6/opencode-telegram/internal/database"
 	"github.com/spf13/viper"
 )
 
@@ -14,8 +15,8 @@ type Config struct {
 }
 
 type BotConfig struct {
-	Token        string   `mapstructure:"token"`
-	AllowedUsers []string `mapstructure:"allowed_users"`
+	Token         string `mapstructure:"token"`
+	AllowedUserID string `mapstructure:"allowed_user_id"`
 }
 
 type WorkspaceConfig struct {
@@ -40,10 +41,10 @@ func Load(cfgFile string) (*Config, error) {
 
 	defaultConfigPath := filepath.Join(homeDir, ".opencode-telegram")
 	viper.SetDefault("bot.token", "")
-	viper.SetDefault("bot.allowed_users", []string{})
+	viper.SetDefault("bot.allowed_user_id", "")
 	viper.SetDefault("workspace.path", filepath.Join(homeDir, ".opencode-telegram"))
 	viper.SetDefault("defaults.agent", "telegram-agent")
-	viper.SetDefault("defaults.model", "MiniMax-M2.5")
+	viper.SetDefault("defaults.model", "MiniMax-M2.7")
 	viper.SetDefault("defaults.provider", "minimax-coding-plan")
 
 	if cfgFile != "" {
@@ -78,4 +79,18 @@ func Load(cfgFile string) (*Config, error) {
 
 func Get() *Config {
 	return globalConfig
+}
+
+func GetAllowedUserChatID() int64 {
+	if globalConfig == nil {
+		return 0
+	}
+	if globalConfig.Bot.AllowedUserID == "" {
+		return 0
+	}
+	chatID, err := database.GetResolvedChatID(globalConfig.Bot.AllowedUserID)
+	if err != nil {
+		return 0
+	}
+	return chatID
 }

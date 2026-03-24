@@ -11,6 +11,7 @@ import (
 	"github.com/martins6/opencode-telegram/internal/bot"
 	"github.com/martins6/opencode-telegram/internal/config"
 	"github.com/martins6/opencode-telegram/internal/logger"
+	"github.com/martins6/opencode-telegram/internal/scheduler"
 	"github.com/martins6/opencode-telegram/internal/workspace"
 	"github.com/spf13/cobra"
 )
@@ -66,6 +67,14 @@ Press Ctrl+C to stop the bot gracefully.`,
 
 		if err := bot.Start(ctx, telegramBot); err != nil {
 			return fmt.Errorf("failed to start bot: %w", err)
+		}
+
+		if err := bot.StartNotifier(ctx, telegramBot); err != nil {
+			log.Printf("Warning: Failed to start notifier service: %v", err)
+		}
+
+		if err := scheduler.StartScheduler(ctx, telegramBot, workspacePath); err != nil {
+			log.Printf("Warning: Failed to start scheduler service: %v", err)
 		}
 
 		log.Println("Bot is running. Press Ctrl+C to stop.")
