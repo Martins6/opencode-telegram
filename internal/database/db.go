@@ -27,19 +27,41 @@ type Mail struct {
 	Subject   string    `json:"subject"`
 	Content   string    `json:"content"`
 	MailSent  bool      `json:"mail_sent"`
-	Urgency   string    `json:"urgency"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
-func Init() error {
-	homeDir, err := getHomeDir()
-	if err != nil {
-		return err
+type ScheduledTask struct {
+	ID           int64      `json:"id"`
+	UserID       int64      `json:"user_id"`
+	ScheduleExpr string     `json:"schedule_expr"`
+	Command      string     `json:"command"`
+	WorkingDir   string     `json:"working_dir"`
+	OnSuccess    string     `json:"on_success"`
+	OnFailure    string     `json:"on_failure"`
+	Status       string     `json:"status"`
+	LastRun      *time.Time `json:"last_run"`
+	NextRun      *time.Time `json:"next_run"`
+	CreatedAt    time.Time  `json:"created_at"`
+}
+
+func Init(workspacePath string) error {
+	homeDir := workspacePath
+	if homeDir == "" {
+		var err error
+		homeDir, err = os.UserHomeDir()
+		if err != nil {
+			return err
+		}
+		homeDir = filepath.Join(homeDir, ".opencode-telegram")
 	}
 
-	dbPath := filepath.Join(homeDir, ".opencode-telegram", "data.db")
-	dbPath = "file:" + dbPath + "?_busy_timeout=5000&cache=shared"
+	if err := os.MkdirAll(homeDir, 0755); err != nil {
+		return fmt.Errorf("failed to create database directory: %w", err)
+	}
 
+	dbPath := filepath.Join(homeDir, "data.db")
+
+	var err error
 	db, err = sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
@@ -78,8 +100,28 @@ func createTables() error {
 		subject TEXT NOT NULL,
 		content TEXT NOT NULL,
 		mail_sent BOOLEAN DEFAULT FALSE,
-		urgency TEXT DEFAULT 'low',
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);`
+
+	scheduledTasksTable := `
+	CREATE TABLE IF NOT EXISTS scheduled_tasks (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER NOT NULL,
+		schedule_expr TEXT NOT NULL,
+		command TEXT NOT NULL,
+		working_dir TEXT,
+		on_success TEXT DEFAULT 'mail',
+		on_failure TEXT DEFAULT 'notify',
+		status TEXT DEFAULT 'active',
+		last_run DATETIME,
+		next_run DATETIME,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);`
+
+	resolvedChatIDsTable := `
+	CREATE TABLE IF NOT EXISTS resolved_chat_ids (
+		username TEXT PRIMARY KEY,
+		chat_id INTEGER NOT NULL
 	);`
 
 	if _, err := db.Exec(notificationsTable); err != nil {
@@ -87,6 +129,14 @@ func createTables() error {
 	}
 
 	if _, err := db.Exec(mailsTable); err != nil {
+		return err
+	}
+
+	if _, err := db.Exec(scheduledTasksTable); err != nil {
+		return err
+	}
+
+	if _, err := db.Exec(resolvedChatIDsTable); err != nil {
 		return err
 	}
 
@@ -142,10 +192,10 @@ func MarkNotificationSent(id int64) error {
 	return err
 }
 
-func InsertMail(id string, userID int64, sender, subject, content, urgency string) error {
+func InsertMail(id string, userID int64, sender, subject, content string) error {
 	_, err := db.Exec(
-		"INSERT INTO mails (id, user_id, sender, subject, content, mail_sent, urgency) VALUES (?, ?, ?, ?, ?, FALSE, ?)",
-		id, userID, sender, subject, content, urgency,
+		"INSERT INTO mails (id, user_id, sender, subject, content, mail_sent) VALUES (?, ?, ?, ?, ?, FALSE)",
+		id, userID, sender, subject, content,
 	)
 	return err
 }
@@ -153,9 +203,9 @@ func InsertMail(id string, userID int64, sender, subject, content, urgency strin
 func GetMail(id string) (*Mail, error) {
 	var m Mail
 	err := db.QueryRow(
-		"SELECT id, user_id, sender, subject, content, mail_sent, urgency, created_at FROM mails WHERE id = ?",
+		"SELECT id, user_id, sender, subject, content, mail_sent, created_at FROM mails WHERE id = ?",
 		id,
-	).Scan(&m.ID, &m.UserID, &m.Sender, &m.Subject, &m.Content, &m.MailSent, &m.Urgency, &m.CreatedAt)
+	).Scan(&m.ID, &m.UserID, &m.Sender, &m.Subject, &m.Content, &m.MailSent, &m.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +214,7 @@ func GetMail(id string) (*Mail, error) {
 
 func GetUnsentMails(userID int64) ([]Mail, error) {
 	rows, err := db.Query(
-		"SELECT id, user_id, sender, subject, content, mail_sent, urgency, created_at FROM mails WHERE user_id = ? AND mail_sent = FALSE ORDER BY created_at ASC",
+		"SELECT id, user_id, sender, subject, content, mail_sent, created_at FROM mails WHERE user_id = ? AND mail_sent = FALSE ORDER BY created_at ASC",
 		userID,
 	)
 	if err != nil {
@@ -175,7 +225,7 @@ func GetUnsentMails(userID int64) ([]Mail, error) {
 	var mails []Mail
 	for rows.Next() {
 		var m Mail
-		if err := rows.Scan(&m.ID, &m.UserID, &m.Sender, &m.Subject, &m.Content, &m.MailSent, &m.Urgency, &m.CreatedAt); err != nil {
+		if err := rows.Scan(&m.ID, &m.UserID, &m.Sender, &m.Subject, &m.Content, &m.MailSent, &m.CreatedAt); err != nil {
 			return nil, err
 		}
 		mails = append(mails, m)
@@ -190,7 +240,7 @@ func MarkMailSent(id string) error {
 
 func ListMails(userID int64) ([]Mail, error) {
 	rows, err := db.Query(
-		"SELECT id, user_id, sender, subject, content, mail_sent, urgency, created_at FROM mails WHERE user_id = ? ORDER BY created_at DESC",
+		"SELECT id, user_id, sender, subject, content, mail_sent, created_at FROM mails WHERE user_id = ? ORDER BY created_at DESC",
 		userID,
 	)
 	if err != nil {
@@ -201,10 +251,110 @@ func ListMails(userID int64) ([]Mail, error) {
 	var mails []Mail
 	for rows.Next() {
 		var m Mail
-		if err := rows.Scan(&m.ID, &m.UserID, &m.Sender, &m.Subject, &m.Content, &m.MailSent, &m.Urgency, &m.CreatedAt); err != nil {
+		if err := rows.Scan(&m.ID, &m.UserID, &m.Sender, &m.Subject, &m.Content, &m.MailSent, &m.CreatedAt); err != nil {
 			return nil, err
 		}
 		mails = append(mails, m)
 	}
 	return mails, nil
+}
+
+func InsertScheduledTask(userID int64, scheduleExpr, command, workingDir, onSuccess, onFailure string, nextRun *time.Time) (int64, error) {
+	result, err := db.Exec(
+		"INSERT INTO scheduled_tasks (user_id, schedule_expr, command, working_dir, on_success, on_failure, status, next_run) VALUES (?, ?, ?, ?, ?, ?, 'active', ?)",
+		userID, scheduleExpr, command, workingDir, onSuccess, onFailure, nextRun,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+func GetScheduledTask(id int64) (*ScheduledTask, error) {
+	var t ScheduledTask
+	err := db.QueryRow(
+		"SELECT id, user_id, schedule_expr, command, working_dir, on_success, on_failure, status, last_run, next_run, created_at FROM scheduled_tasks WHERE id = ?",
+		id,
+	).Scan(&t.ID, &t.UserID, &t.ScheduleExpr, &t.Command, &t.WorkingDir, &t.OnSuccess, &t.OnFailure, &t.Status, &t.LastRun, &t.NextRun, &t.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
+func GetDueScheduledTasks(userID int64) ([]ScheduledTask, error) {
+	rows, err := db.Query(
+		"SELECT id, user_id, schedule_expr, command, working_dir, on_success, on_failure, status, last_run, next_run, created_at FROM scheduled_tasks WHERE user_id = ? AND status = 'active' AND next_run <= datetime('now', 'localtime') ORDER BY next_run ASC",
+		userID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []ScheduledTask
+	for rows.Next() {
+		var t ScheduledTask
+		if err := rows.Scan(&t.ID, &t.UserID, &t.ScheduleExpr, &t.Command, &t.WorkingDir, &t.OnSuccess, &t.OnFailure, &t.Status, &t.LastRun, &t.NextRun, &t.CreatedAt); err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, t)
+	}
+	return tasks, nil
+}
+
+func ListScheduledTasks(userID int64) ([]ScheduledTask, error) {
+	rows, err := db.Query(
+		"SELECT id, user_id, schedule_expr, command, working_dir, on_success, on_failure, status, last_run, next_run, created_at FROM scheduled_tasks WHERE user_id = ? ORDER BY created_at DESC",
+		userID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []ScheduledTask
+	for rows.Next() {
+		var t ScheduledTask
+		if err := rows.Scan(&t.ID, &t.UserID, &t.ScheduleExpr, &t.Command, &t.WorkingDir, &t.OnSuccess, &t.OnFailure, &t.Status, &t.LastRun, &t.NextRun, &t.CreatedAt); err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, t)
+	}
+	return tasks, nil
+}
+
+func UpdateScheduledTaskStatus(id int64, status string) error {
+	_, err := db.Exec("UPDATE scheduled_tasks SET status = ? WHERE id = ?", status, id)
+	return err
+}
+
+func UpdateScheduledTaskRun(id int64, lastRun, nextRun *time.Time) error {
+	_, err := db.Exec("UPDATE scheduled_tasks SET last_run = ?, next_run = ? WHERE id = ?", lastRun, nextRun, id)
+	return err
+}
+
+func DeleteScheduledTask(id int64) error {
+	_, err := db.Exec("DELETE FROM scheduled_tasks WHERE id = ?", id)
+	return err
+}
+
+func SetResolvedChatID(username string, chatID int64) error {
+	_, err := db.Exec(
+		"INSERT OR REPLACE INTO resolved_chat_ids (username, chat_id) VALUES (?, ?)",
+		username, chatID,
+	)
+	return err
+}
+
+func GetResolvedChatID(username string) (int64, error) {
+	var chatID int64
+	err := db.QueryRow(
+		"SELECT chat_id FROM resolved_chat_ids WHERE username = ?",
+		username,
+	).Scan(&chatID)
+	if err != nil {
+		return 0, err
+	}
+	return chatID, nil
 }

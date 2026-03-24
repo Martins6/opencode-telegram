@@ -3,36 +3,59 @@ package bot
 import (
 	"context"
 	"fmt"
-	"log"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/go-telegram/bot"
+	"github.com/go-telegram/bot/models"
 	"github.com/martins6/opencode-telegram/internal/config"
 	"github.com/martins6/opencode-telegram/internal/database"
-	"github.com/spf13/viper"
+	"github.com/martins6/opencode-telegram/internal/logger"
+	"github.com/martins6/opencode-telegram/internal/opencode"
+	"github.com/martins6/opencode-telegram/internal/session"
 )
 
-var userChatID int64 = 1
+type NotifierSender interface {
+	SendMessage(ctx context.Context, params *bot.SendMessageParams) (*models.Message, error)
+}
 
 type NotifierService struct {
 	bot    *bot.Bot
 	ctx    context.Context
 	cancel context.CancelFunc
+	sender NotifierSender
+}
+
+type realSender struct {
+	bot *bot.Bot
+}
+
+func (r *realSender) SendMessage(ctx context.Context, params *bot.SendMessageParams) (*models.Message, error) {
+	return r.bot.SendMessage(ctx, params)
+}
+
+type mockSender struct{}
+
+func (m *mockSender) SendMessage(ctx context.Context, params *bot.SendMessageParams) (*models.Message, error) {
+	if params != nil {
+		logger.LogDebug("Mock: would send message to chat %d: %s", params.ChatID, params.Text)
+	}
+	return nil, nil
 }
 
 func StartNotifier(ctx context.Context, b *bot.Bot) error {
-	if b == nil {
-		log.Println("Notifier: bot not initialized, skipping")
-		return nil
+	workspacePath := ""
+	cfg := config.Get()
+	if cfg != nil && cfg.Workspace.Path != "" {
+		workspacePath = cfg.Workspace.Path
+	} else {
+		homeDir, _ := os.UserHomeDir()
+		workspacePath = filepath.Join(homeDir, ".opencode-telegram")
 	}
 
-	if err := database.Init(); err != nil {
+	if err := database.Init(workspacePath); err != nil {
 		return fmt.Errorf("failed to initialize database: %w", err)
-	}
-
-	userChatID = viper.GetInt64("notifications.user_id")
-	if userChatID == 0 {
-		userChatID = 1
 	}
 
 	n := &NotifierService{
@@ -41,9 +64,15 @@ func StartNotifier(ctx context.Context, b *bot.Bot) error {
 	}
 	n.ctx, n.cancel = context.WithCancel(ctx)
 
+	if b != nil {
+		n.sender = &realSender{bot: b}
+	} else {
+		n.sender = &mockSender{}
+	}
+
 	go n.run()
 
-	log.Println("Notifier service started")
+	logger.LogDebug("Notifier service started")
 	return nil
 }
 
@@ -54,7 +83,7 @@ func (n *NotifierService) run() {
 	for {
 		select {
 		case <-n.ctx.Done():
-			log.Println("Notifier service stopped")
+			logger.LogDebug("Notifier service stopped")
 			return
 		case <-ticker.C:
 			n.processNotifications()
@@ -64,9 +93,14 @@ func (n *NotifierService) run() {
 }
 
 func (n *NotifierService) processNotifications() {
+	userChatID := config.GetAllowedUserChatID()
+	if userChatID == 0 {
+		return
+	}
+
 	notifications, err := database.GetUnsentNotifications(userChatID)
 	if err != nil {
-		log.Printf("Notifier: failed to get notifications: %v", err)
+		logger.LogDebug("Notifier: failed to get notifications for user %d: %v", userChatID, err)
 		return
 	}
 
@@ -76,62 +110,151 @@ func (n *NotifierService) processNotifications() {
 			notification.Message,
 		)
 
-		n.bot.SendMessage(n.ctx, &bot.SendMessageParams{
+		_, err := n.sender.SendMessage(n.ctx, &bot.SendMessageParams{
 			ChatID: userChatID,
 			Text:   message,
 		})
+		if err != nil {
+			logger.LogDebug("Notifier: failed to send notification %d: %v", notification.ID, err)
+			continue
+		}
 
 		if err := database.MarkNotificationSent(notification.ID); err != nil {
-			log.Printf("Notifier: failed to mark notification as sent: %v", err)
+			logger.LogDebug("Notifier: failed to mark notification as sent: %v", err)
 		}
 	}
 }
 
 func (n *NotifierService) processMails() {
-	cfg := config.Get()
-	mediumHours := 1
-
-	if cfg != nil && cfg.Mail.UrgencyTiming.MediumHours > 0 {
-		mediumHours = cfg.Mail.UrgencyTiming.MediumHours
+	userChatID := config.GetAllowedUserChatID()
+	if userChatID == 0 {
+		return
 	}
 
-	now := time.Now()
+	workspace := ""
+	if cfg != nil && cfg.Workspace.Path != "" {
+		workspace = cfg.Workspace.Path
+	} else {
+		homeDir, _ := os.UserHomeDir()
+		workspace = filepath.Join(homeDir, ".opencode-telegram")
+	}
 
 	mails, err := database.GetUnsentMails(userChatID)
 	if err != nil {
-		log.Printf("Notifier: failed to get mails: %v", err)
+		logger.LogDebug("Notifier: failed to get mails for user %d: %v", userChatID, err)
 		return
 	}
 
 	for _, mail := range mails {
-		shouldSend := false
+		logger.LogDebug("Notifier: processing mail %s for user %d (sender: %s, subject: %s)", mail.ID, userChatID, mail.Sender, mail.Subject)
 
-		switch mail.Urgency {
-		case "high":
-			shouldSend = true
-		case "medium":
-			if now.Sub(mail.CreatedAt) >= time.Duration(mediumHours)*time.Hour {
-				shouldSend = true
-			}
-		case "low":
-			shouldSend = false
+		agentMessage := fmt.Sprintf(
+			"New email received:\nID: %s\nFrom: %s\nSubject: %s\nTimestamp: %s\n\nContent:\n%s",
+			mail.ID,
+			mail.Sender,
+			mail.Subject,
+			mail.CreatedAt.Format("2006-01-02 15:04:05"),
+			mail.Content,
+		)
+
+		sessionMgr := session.GetManager()
+		userSession, err := sessionMgr.GetSession(userChatID, workspace)
+		if err != nil {
+			logger.LogDebug("Notifier: failed to get session for user %d: %v", userChatID, err)
+			n.sendFallbackMailNotification(userChatID, mail)
+			continue
 		}
 
-		if shouldSend {
-			message := fmt.Sprintf("It seems an mail has arrived. Please check it with `opencode-telegram mail open %s`. Please simulate as if you had received the mail not me.", mail.ID)
+		agent := cfg.Defaults.Agent
+		model := cfg.Defaults.Model
+		provider := cfg.Defaults.Provider
 
-			n.bot.SendMessage(n.ctx, &bot.SendMessageParams{
-				ChatID: userChatID,
-				Text:   message,
-			})
-
-			if err := database.MarkMailSent(mail.ID); err != nil {
-				log.Printf("Notifier: failed to mark mail as sent: %v", err)
+		if settings := userSettings[userChatID]; settings != nil {
+			if settings.Agent != "" {
+				agent = settings.Agent
 			}
+			if settings.Model != "" {
+				model = settings.Model
+			}
+			if settings.Provider != "" {
+				provider = settings.Provider
+			}
+		}
+
+		if agent == "" {
+			agent = "build"
+		}
+		if model == "" {
+			model = "MiniMax-M2.7"
+		}
+		if provider == "" {
+			provider = "minimax-coding-plan"
+		}
+
+		runner := opencode.NewRunner(workspace, agent, model, provider)
+
+		var sessionID string
+		if userSession.OpenCodeID != "" && !userSession.IsNewSession {
+			sessionID = userSession.OpenCodeID
+		}
+
+		logger.LogDebug("Notifier: triggering agent for mail %s (session: %s, agent: %s, model: %s, provider: %s)",
+			mail.ID, sessionID, agent, model, provider)
+
+		result, err := runner.Execute(sessionID, agentMessage)
+		if err != nil {
+			logger.LogDebug("Notifier: agent failed for mail %s: %v", mail.ID, err)
+			n.sendFallbackMailNotification(userChatID, mail)
+			continue
+		}
+
+		if result.ResponseText != "" {
+			logger.LogDebug("Notifier: sending agent response for mail %s to user %d", mail.ID, userChatID)
+			_, err := n.sender.SendMessage(n.ctx, &bot.SendMessageParams{
+				ChatID: userChatID,
+				Text:   result.ResponseText,
+			})
+			if err != nil {
+				logger.LogDebug("Notifier: failed to send agent response for mail %s: %v", mail.ID, err)
+				n.sendFallbackMailNotification(userChatID, mail)
+				continue
+			}
+		}
+
+		if result.SessionID != "" {
+			userSession.OpenCodeID = result.SessionID
+			userSession.IsNewSession = false
+			sessionMgr.UpdateSession(userSession)
+			logger.LogDebug("Notifier: updated session ID to %s for user %d", result.SessionID, userChatID)
+		}
+
+		if err := database.MarkMailSent(mail.ID); err != nil {
+			logger.LogDebug("Notifier: failed to mark mail %s as sent: %v", mail.ID, err)
+		} else {
+			logger.LogDebug("Notifier: mail %s delivered successfully", mail.ID)
 		}
 	}
 }
 
+func (n *NotifierService) sendFallbackMailNotification(userChatID int64, mail database.Mail) {
+	message := fmt.Sprintf("You have a new mail from %s: %s", mail.Sender, mail.Subject)
+
+	_, err := n.sender.SendMessage(n.ctx, &bot.SendMessageParams{
+		ChatID: userChatID,
+		Text:   message,
+	})
+	if err != nil {
+		logger.LogDebug("Notifier: fallback failed to send mail %s: %v", mail.ID, err)
+		return
+	}
+
+	if err := database.MarkMailSent(mail.ID); err != nil {
+		logger.LogDebug("Notifier: fallback failed to mark mail %s as sent: %v", mail.ID, err)
+	} else {
+		logger.LogDebug("Notifier: mail %s delivered via fallback", mail.ID)
+	}
+}
+
 func StopNotifier() {
-	log.Println("Stopping notifier service...")
+	logger.LogDebug("Stopping notifier service...")
 }

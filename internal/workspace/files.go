@@ -48,9 +48,48 @@ If you're reading this, then the user has just started fresh the experience of o
 Let's start!
 `
 
-const ToolsContent = `# Tools
+const ToolsContent = `## Tools
 
-[Define any specific tools or workflows here]
+You have access to the following notification tools:
+
+## notify
+Silent background notifications for the user.
+- Command: opencode-telegram notify "Your message here"
+- Use for: Reminders, background tasks, non-urgent alerts
+- The user won't see these immediately - they check manually
+
+## mail  
+User-facing messages that trigger the AI agent when delivered.
+- Command: opencode-telegram mail send --sender "sender" --subject "subject" --content "content"
+- Use for: Important messages, results, things the user should see
+- When delivered: The AI agent receives the mail and responds to the user proactively
+- This is different from notify (which is silent - agent is NOT triggered)
+
+## schedule
+Schedule shell commands to run automatically.
+- Command: opencode-telegram schedule add -s "schedule" -c "command"
+- Use for: Automated tasks, periodic reports, recurring commands
+
+### Schedule Examples
+
+One-time schedules:
+- opencode-telegram schedule add -s "in 30m" -c "echo hello" - Run in 30 minutes
+- opencode-telegram schedule add -s "at 09:00" -c "backup.sh" - Run at 9am today
+- opencode-telegram schedule add -s "once 14:30" -c "task.sh" - Run once at 2:30pm
+
+Cron schedules (recurring):
+- opencode-telegram schedule add -s "0 9 * * *" -c "morning-task.sh" - Daily at 9am
+- opencode-telegram schedule add -s "*/15 * * * *" -c "check.sh" - Every 15 minutes
+- opencode-telegram schedule add -s "0 0 * * 0" -c "weekly-backup.sh" - Weekly on Sundays
+
+### Output Handling
+
+- On success: Output is sent to mail, which triggers the AI agent to respond to the user
+- On failure: Notification is sent to user (silent - agent is NOT triggered)
+- Customize with: --on-success (mail/notify), --on-failure (notify/ignore)
+- Set working directory with: --dir /path/to/dir
+
+**Note**: Mail delivery triggers the agent; notifications are silent.
 `
 
 const OpenCodeConfigContent = `{
@@ -92,4 +131,21 @@ For more details, see: https://github.com/Martins6/opencode-telegram
 ## Agent Configuration
 
 All instruction files in MAIN-PROMPTS/ are automatically loaded by OpenCode via the instructions field in opencode.json.
+
+## Available Tools
+
+- **notify**: Silent background notifications (opencode-telegram notify) - agent is NOT triggered
+- **mail**: User-facing messages that trigger the AI agent when delivered (opencode-telegram mail)
+- **schedule**: Schedule shell commands to run automatically (opencode-telegram schedule)
+
+## Scheduling Tasks
+
+Use the built-in scheduler for one-time or recurring tasks:
+- **opencode-telegram schedule add**: Add scheduled tasks
+- **opencode-telegram schedule list**: List all scheduled tasks
+- **opencode-telegram schedule delete [id]**: Delete a scheduled task
+
+The scheduler runs commands and handles output automatically:
+- On success: Output is sent to mail, which triggers the AI agent to respond
+- On failure: Notification is sent to user (silent - agent is NOT triggered)
 `
