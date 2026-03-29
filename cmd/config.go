@@ -24,6 +24,13 @@ var configSetCmd = &cobra.Command{
 		key := args[0]
 		value := args[1]
 
+		if key == "bot.allowed_users" {
+			return fmt.Errorf("bot.allowed_users is no longer supported, use bot.allowed_user_id instead")
+		}
+		if key == "notifications.user_ids" {
+			return fmt.Errorf("notifications.user_ids is no longer supported, use notifications.user_id instead")
+		}
+
 		homeDir, _ := os.UserHomeDir()
 		configPath := fmt.Sprintf("%s/.opencode-telegram/config.toml", homeDir)
 
@@ -79,7 +86,7 @@ var configListCmd = &cobra.Command{
 			return fmt.Errorf("failed to load config: %w", err)
 		}
 		fmt.Printf("Bot Token: %s\n", cfg.Bot.Token)
-		fmt.Printf("Allowed Users: %v\n", cfg.Bot.AllowedUsers)
+		fmt.Printf("Allowed User ID: %s\n", cfg.Bot.AllowedUserID)
 		fmt.Printf("Workspace Path: %s\n", cfg.Workspace.Path)
 		fmt.Printf("Default Agent: %s\n", cfg.Defaults.Agent)
 		fmt.Printf("Default Model: %s\n", cfg.Defaults.Model)
