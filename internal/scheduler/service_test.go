@@ -166,7 +166,7 @@ func TestSchedulerTaskExecution(t *testing.T) {
 		t.Fatalf("failed to insert task: %v", err)
 	}
 
-	tasks, err := database.GetDueScheduledTasks(userID)
+	tasks, err := database.GetDueScheduledTasks(userID, time.Now())
 	if err != nil {
 		t.Fatalf("failed to get due tasks: %v", err)
 	}
