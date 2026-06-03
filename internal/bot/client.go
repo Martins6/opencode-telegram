@@ -11,6 +11,12 @@ import (
 var Bot *bot.Bot
 
 func Initialize(cfg *config.Config) (*bot.Bot, error) {
+	// Note: bot token and allowed_user_id are read once at startup and
+	// require a daemon restart to change. Hot-reloading the token would
+	// require tearing down and re-establishing the Telegram client
+	// connection, which is intentionally not supported. Runtime-mutable
+	// configs (defaults.agent/model/provider, bot.timezone) are reloaded
+	// on every message handler / notifier tick via config.Load("").
 	if cfg.Bot.Token == "" {
 		return nil, nil
 	}

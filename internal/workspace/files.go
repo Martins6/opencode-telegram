@@ -90,6 +90,19 @@ Cron schedules (recurring):
 - Set working directory with: --dir /path/to/dir
 
 **Note**: Mail delivery triggers the agent; notifications are silent.
+
+## Timezone (required for scheduling)
+
+Before using schedule, you must set the timezone. The bot refuses all
+schedule subcommands until this is done — the failure is the prompt.
+
+- Run once: opencode-telegram schedule set --timezone <IANA>
+  Example: opencode-telegram schedule set --timezone America/Sao_Paulo
+- Idempotent — re-run with a different zone to change it.
+- notify and mail are not affected — they have no time component.
+- All configs (including timezone, defaults.agent/model/provider) live in
+  config.toml and are reloaded by the running daemon within ~5 seconds —
+  no restart needed after config set or schedule set.
 `
 
 const OpenCodeConfigContent = `{

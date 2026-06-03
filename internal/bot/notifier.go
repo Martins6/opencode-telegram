@@ -126,6 +126,13 @@ func (n *NotifierService) processNotifications() {
 }
 
 func (n *NotifierService) processMails() {
+	if _, err := config.Load(""); err != nil {
+		logger.LogDebug("notifier: failed to reload config: %v", err)
+	}
+	if fresh := config.Get(); fresh != nil {
+		cfg = fresh
+	}
+
 	userChatID := config.GetAllowedUserChatID()
 	if userChatID == 0 {
 		return
