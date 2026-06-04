@@ -34,7 +34,10 @@ Install a specific version:
 curl -sSL https://raw.githubusercontent.com/martins6/opencode-telegram/main/install.sh | bash -s -- -v v0.1.0
 ```
 
-### Development Installation (local_install.sh)
+#### Development Install (Linux/macOS)
+
+<details>
+<summary>Instructions</summary>
 
 For developers who want to build from source, use `local_install.sh`:
 
@@ -48,6 +51,8 @@ For developers who want to build from source, use `local_install.sh`:
 - OpenCode CLI installed (`opencode` command available)
 
 This script builds the binary from local source code instead of downloading from GitHub releases.
+
+</details>
 
 ## Quick Start
 
