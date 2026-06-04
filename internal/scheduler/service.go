@@ -65,13 +65,24 @@ func (s *SchedulerService) run() {
 }
 
 func (s *SchedulerService) processDueTasks() {
+	if _, err := config.Load(""); err != nil {
+		logger.LogDebug("Scheduler: failed to reload config: %v", err)
+	}
+
 	userID := config.GetAllowedUserChatID()
 	if userID == 0 {
 		logger.LogDebug("Scheduler: cannot process tasks - user chat ID not resolved. Please message the bot first.")
 		return
 	}
 
-	tasks, err := database.GetDueScheduledTasks(userID)
+	loc, err := config.GetLocation()
+	if err != nil {
+		logger.LogDebug("Scheduler: cannot process tasks - %v. Please run 'opencode-telegram schedule set --timezone <IANA>' first.", err)
+		return
+	}
+	cutoff := time.Now().In(loc)
+
+	tasks, err := database.GetDueScheduledTasks(userID, cutoff)
 	if err != nil {
 		logger.LogDebug("Scheduler: failed to get due tasks for user %d: %v", userID, err)
 		return
@@ -85,7 +96,15 @@ func (s *SchedulerService) processDueTasks() {
 func (s *SchedulerService) executeTask(task database.ScheduledTask, userID int64) {
 	logger.LogDebug("Scheduler: executing task %d: %s", task.ID, task.Command)
 
-	now := time.Now()
+	loc, err := config.GetLocation()
+	if err != nil {
+		logger.LogDebug("Scheduler: cannot execute task %d: %v", task.ID, err)
+		database.UpdateScheduledTaskStatus(task.ID, "failed")
+		return
+	}
+	logger.LogDebug("Scheduler: task %d using timezone %s", task.ID, loc.String())
+
+	now := time.Now().In(loc)
 	var nextRun time.Time
 
 	isOneTime := strings.HasPrefix(task.ScheduleExpr, "once ") ||

@@ -1,12 +1,18 @@
 package config
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
+	"time"
 
 	"github.com/martins6/opencode-telegram/internal/database"
 	"github.com/spf13/viper"
 )
+
+var ErrTimezoneNotConfigured = errors.New("timezone not configured")
 
 type Config struct {
 	Bot       BotConfig       `mapstructure:"bot"`
@@ -17,6 +23,7 @@ type Config struct {
 type BotConfig struct {
 	Token         string `mapstructure:"token"`
 	AllowedUserID string `mapstructure:"allowed_user_id"`
+	Timezone      string `mapstructure:"timezone"`
 }
 
 type WorkspaceConfig struct {
@@ -31,7 +38,15 @@ type DefaultsConfig struct {
 
 var globalConfig *Config
 
+var (
+	loadMu          sync.Mutex
+	setDefaultsOnce sync.Once
+)
+
 func Load(cfgFile string) (*Config, error) {
+	loadMu.Lock()
+	defer loadMu.Unlock()
+
 	viper.SetConfigType("toml")
 
 	homeDir, err := os.UserHomeDir()
@@ -40,12 +55,15 @@ func Load(cfgFile string) (*Config, error) {
 	}
 
 	defaultConfigPath := filepath.Join(homeDir, ".opencode-telegram")
-	viper.SetDefault("bot.token", "")
-	viper.SetDefault("bot.allowed_user_id", "")
-	viper.SetDefault("workspace.path", filepath.Join(homeDir, ".opencode-telegram"))
-	viper.SetDefault("defaults.agent", "telegram-agent")
-	viper.SetDefault("defaults.model", "MiniMax-M2.7")
-	viper.SetDefault("defaults.provider", "minimax-coding-plan")
+	setDefaultsOnce.Do(func() {
+		viper.SetDefault("bot.token", "")
+		viper.SetDefault("bot.allowed_user_id", "")
+		viper.SetDefault("bot.timezone", "")
+		viper.SetDefault("workspace.path", defaultConfigPath)
+		viper.SetDefault("defaults.agent", "telegram-agent")
+		viper.SetDefault("defaults.model", "MiniMax-M2.7")
+		viper.SetDefault("defaults.provider", "minimax-coding-plan")
+	})
 
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
@@ -94,3 +112,16 @@ func GetAllowedUserChatID() int64 {
 	}
 	return chatID
 }
+
+func GetLocation() (*time.Location, error) {
+	if globalConfig == nil || globalConfig.Bot.Timezone == "" {
+		return nil, ErrTimezoneNotConfigured
+	}
+	loc, err := time.LoadLocation(globalConfig.Bot.Timezone)
+	if err != nil {
+		return nil, fmt.Errorf("invalid timezone %q: %w", globalConfig.Bot.Timezone, err)
+	}
+	return loc, nil
+}
+
+func SetForTest(c *Config) { globalConfig = c }

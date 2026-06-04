@@ -19,6 +19,18 @@ Use scheduled tasks for:
 
 Use `opencode-telegram schedule` to manage scheduled tasks.
 
+## Prerequisites
+
+Before any `schedule` subcommand works, set the timezone:
+
+```bash
+opencode-telegram schedule set --timezone America/Sao_Paulo
+```
+
+The bot refuses all other `schedule` subcommands (add/list/delete/run) until this is done. This is a one-time setup but is idempotent. `notify` and `mail` are unaffected — they have no time component.
+
+All configs in `config.toml` (including timezone, `defaults.agent/model/provider`) are reloaded by the running daemon within ~5 seconds. No restart is needed after `config set` or `schedule set`.
+
 ### Any Bash Command
 
 **Any bash command or script can be scheduled.** For example:
@@ -169,6 +181,8 @@ opencode-telegram schedule add -s "0 0 * * *" -c "backup.sh" --on-success notify
 ## Important Notes
 
 - The Telegram bot must be running for scheduled tasks to execute
+- Timezone must be set with `schedule set` before any scheduling will work
+- The running daemon picks up config changes within ~5 seconds (no restart needed)
 - Scheduled tasks are stored in SQLite and persist across bot restarts
 - Working directory defaults to the workspace folder (~/.opencode-telegram)
 - Use absolute paths in commands for reliability

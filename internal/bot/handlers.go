@@ -37,6 +37,13 @@ func DefaultHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 		return
 	}
 
+	if _, err := config.Load(""); err != nil {
+		logger.LogDebug("bot: failed to reload config: %v", err)
+	}
+	if fresh := config.Get(); fresh != nil {
+		cfg = fresh
+	}
+
 	userID := update.Message.From.ID
 	username := update.Message.From.Username
 

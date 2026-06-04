@@ -12,3 +12,6 @@
 2026-03-24-00-00 | Removed mail urgency delivery mechanism - all mails delivered immediately
 2026-03-24-00-00 | Removed urgency references from workspace templates and scheduler code
 2026-03-07-14-30 | Added MAIN-PROMPTS folder reorganization for better workspace template structure
+2026-06-03-14-55 | Added scheduler timezone gating with `schedule set` setup and bot.timezone in config.toml
+2026-06-03-14-55 | Added runtime config hot-reload for defaults.agent/model/provider and bot.timezone in bot handlers and notifier
+2026-06-03-14-55 | Documented the `schedule set` prerequisite in TOOLS.md template, scheduling skill, and feature doc

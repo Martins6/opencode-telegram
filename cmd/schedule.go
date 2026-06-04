@@ -17,18 +17,29 @@ import (
 )
 
 var (
-	scheduleCmd     string
-	scheduleCommand string
-	scheduleDir     string
-	scheduleOnSucc  string
-	scheduleOnFail  string
+	scheduleCmd        string
+	scheduleCommand    string
+	scheduleDir        string
+	scheduleOnSucc     string
+	scheduleOnFail     string
+	scheduleSetTimezone string
 )
+
+func requireTimezone(cmd *cobra.Command) error {
+	if cmd.Name() == "schedule" || cmd.Name() == "set" {
+		return nil
+	}
+	if _, err := config.GetLocation(); err != nil {
+		return fmt.Errorf("timezone not configured. Run 'opencode-telegram schedule set --timezone <IANA>' first")
+	}
+	return nil
+}
 
 var scheduleCmdMain = &cobra.Command{
 	Use:   "schedule",
 	Short: "Manage scheduled tasks",
 	Long:  "Schedule shell commands to run automatically at specified times.",
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		if _, err := config.Load(""); err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: Failed to load config: %v\n", err)
 		}
@@ -41,6 +52,60 @@ var scheduleCmdMain = &cobra.Command{
 		if err := database.Init(workspacePath); err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: Failed to initialize database: %v\n", err)
 		}
+
+		return requireTimezone(cmd)
+	},
+}
+
+var scheduleSetCmd = &cobra.Command{
+	Use:   "set",
+	Short: "Set the timezone used by the scheduler (one-time setup)",
+	Long: `Set the timezone used by the scheduler. This is a one-time setup required
+before any other 'schedule' subcommand will work.
+
+Example:
+  opencode-telegram schedule set --timezone America/Sao_Paulo`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if scheduleSetTimezone == "" {
+			return fmt.Errorf("timezone is required (use --timezone, e.g. America/Sao_Paulo)")
+		}
+		loc, err := time.LoadLocation(scheduleSetTimezone)
+		if err != nil {
+			return fmt.Errorf("invalid timezone: %w", err)
+		}
+
+		previousZone := ""
+		if cfg := config.Get(); cfg != nil {
+			previousZone = cfg.Bot.Timezone
+		}
+
+		viper.Set("bot.timezone", scheduleSetTimezone)
+
+		configPath := viper.ConfigFileUsed()
+		if configPath == "" {
+			homeDir, _ := os.UserHomeDir()
+			configPath = filepath.Join(homeDir, ".opencode-telegram", "config.toml")
+		}
+		if err := viper.WriteConfigAs(configPath); err != nil {
+			return fmt.Errorf("failed to write config: %w", err)
+		}
+		if _, err := config.Load(configPath); err != nil {
+			return fmt.Errorf("failed to reload config: %w", err)
+		}
+
+		now := time.Now().In(loc)
+		fmt.Printf("Timezone set to %s. Current time in that zone: %s\n", scheduleSetTimezone, now.Format(time.RFC3339))
+
+		if previousZone != "" && previousZone != scheduleSetTimezone {
+			userID := config.GetAllowedUserChatID()
+			if userID != 0 {
+				tasks, err := database.ListScheduledTasks(userID)
+				if err == nil && len(tasks) > 0 {
+					fmt.Printf("Note: %d existing scheduled tasks will be re-interpreted under the new zone.\n", len(tasks))
+				}
+			}
+		}
+		return nil
 	},
 }
 
@@ -74,7 +139,11 @@ Examples:
 			return fmt.Errorf("please send a message to the bot first to register your chat ID")
 		}
 
-		nextRun, err := parseSchedule(scheduleCmd)
+		loc, err := config.GetLocation()
+		if err != nil {
+			return fmt.Errorf("failed to resolve timezone: %w", err)
+		}
+		nextRun, err := parseSchedule(scheduleCmd, loc)
 		if err != nil {
 			return fmt.Errorf("failed to parse schedule: %w", err)
 		}
@@ -235,10 +304,13 @@ var scheduleRunCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(scheduleCmdMain)
+	scheduleCmdMain.AddCommand(scheduleSetCmd)
 	scheduleCmdMain.AddCommand(scheduleAddCmd)
 	scheduleCmdMain.AddCommand(scheduleListCmd)
 	scheduleCmdMain.AddCommand(scheduleDeleteCmd)
 	scheduleCmdMain.AddCommand(scheduleRunCmd)
+
+	scheduleSetCmd.Flags().StringVar(&scheduleSetTimezone, "timezone", "", "IANA timezone, e.g. America/Sao_Paulo")
 
 	scheduleAddCmd.Flags().StringVarP(&scheduleCmd, "schedule", "s", "", "Schedule expression (cron, 'at HH:MM', 'in 30m', 'once HH:MM')")
 	scheduleAddCmd.Flags().StringVarP(&scheduleCommand, "command", "c", "", "Shell command to execute")
@@ -247,7 +319,10 @@ func init() {
 	scheduleAddCmd.Flags().StringVar(&scheduleOnFail, "on-failure", "notify", "Action on failure: notify or ignore")
 }
 
-func parseSchedule(expr string) (*time.Time, error) {
+func parseSchedule(expr string, loc *time.Location) (*time.Time, error) {
+	if loc == nil {
+		return nil, config.ErrTimezoneNotConfigured
+	}
 	expr = strings.TrimSpace(expr)
 
 	inPattern := regexp.MustCompile(`(?i)^in\s+(\d+)([smh])$`)
@@ -274,12 +349,12 @@ func parseSchedule(expr string) (*time.Time, error) {
 	}
 
 	if matches := atPattern.FindStringSubmatch(expr); len(matches) == 2 {
-		now := time.Now()
+		now := time.Now().In(loc)
 		t, err := time.Parse("15:04", matches[1])
 		if err != nil {
 			return nil, err
 		}
-		next := time.Date(now.Year(), now.Month(), now.Day(), t.Hour(), t.Minute(), 0, 0, now.Location())
+		next := time.Date(now.Year(), now.Month(), now.Day(), t.Hour(), t.Minute(), 0, 0, loc)
 		if next.Before(now) {
 			next = next.Add(24 * time.Hour)
 		}
@@ -287,12 +362,12 @@ func parseSchedule(expr string) (*time.Time, error) {
 	}
 
 	if matches := oncePattern.FindStringSubmatch(expr); len(matches) == 2 {
-		now := time.Now()
+		now := time.Now().In(loc)
 		t, err := time.Parse("15:04", matches[1])
 		if err != nil {
 			return nil, err
 		}
-		next := time.Date(now.Year(), now.Month(), now.Day(), t.Hour(), t.Minute(), 0, 0, now.Location())
+		next := time.Date(now.Year(), now.Month(), now.Day(), t.Hour(), t.Minute(), 0, 0, loc)
 		if next.Before(now) {
 			next = next.Add(24 * time.Hour)
 		}
@@ -306,7 +381,7 @@ func parseSchedule(expr string) (*time.Time, error) {
 		if err != nil {
 			return nil, err
 		}
-		next := parsed.Next(time.Now())
+		next := parsed.Next(time.Now().In(loc))
 		return &next, nil
 	}
 

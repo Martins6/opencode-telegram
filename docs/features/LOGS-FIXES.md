@@ -18,3 +18,4 @@
 2026-03-24-00-00 | Fixed database initialization - workspace path now passed to database.Init()
 2026-03-24-00-00 | Fixed database error - created .opencode-telegram directory before opening database
 2026-03-06-14-00 | Fixed OpenCode server communication with proper session management
+2026-06-03-14-55 | Fixed scheduler firing in host localtime instead of user timezone - threaded bot.timezone through parseSchedule, executeTask, and GetDueScheduledTasks cutoff

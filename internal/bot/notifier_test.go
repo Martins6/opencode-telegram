@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/martins6/opencode-telegram/internal/config"
 	"github.com/martins6/opencode-telegram/internal/database"
 )
 
@@ -79,6 +80,75 @@ func TestMockSenderWithParams(t *testing.T) {
 
 func generateTestUUID() string {
 	return "test-" + time.Now().Format("20060102150405")
+}
+
+func writeConfigFile(t *testing.T, path, content string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+}
+
+func TestConfigHotReload(t *testing.T) {
+	tmpDir := t.TempDir()
+	cfgPath := filepath.Join(tmpDir, "config.toml")
+
+	orig := config.Get()
+	t.Cleanup(func() { config.SetForTest(orig) })
+
+	writeConfigFile(t, cfgPath, `
+[bot]
+token = "test-token"
+allowed_user_id = "test-user"
+timezone = "America/Sao_Paulo"
+
+[defaults]
+agent = "agentA"
+model = "modelA"
+provider = "providerA"
+
+[workspace]
+path = "/tmp/test"
+`)
+	if _, err := config.Load(cfgPath); err != nil {
+		t.Fatalf("first load: %v", err)
+	}
+	if got := config.Get().Defaults.Agent; got != "agentA" {
+		t.Fatalf("after first load: agent = %q, want agentA", got)
+	}
+	if got := config.Get().Bot.Timezone; got != "America/Sao_Paulo" {
+		t.Fatalf("after first load: timezone = %q, want America/Sao_Paulo", got)
+	}
+
+	writeConfigFile(t, cfgPath, `
+[bot]
+token = "test-token"
+allowed_user_id = "test-user"
+timezone = "America/Sao_Paulo"
+
+[defaults]
+agent = "agentB"
+model = "modelB"
+provider = "providerB"
+
+[workspace]
+path = "/tmp/test"
+`)
+	if _, err := config.Load(cfgPath); err != nil {
+		t.Fatalf("second load: %v", err)
+	}
+	if got := config.Get().Defaults.Agent; got != "agentB" {
+		t.Errorf("after hot-reload: agent = %q, want agentB (handler would use stale value)", got)
+	}
+	if got := config.Get().Defaults.Model; got != "modelB" {
+		t.Errorf("after hot-reload: model = %q, want modelB", got)
+	}
+	if got := config.Get().Bot.Timezone; got != "America/Sao_Paulo" {
+		t.Errorf("after hot-reload: timezone changed unexpectedly: %q", got)
+	}
 }
 
 func TestMain(m *testing.M) {

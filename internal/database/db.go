@@ -282,10 +282,10 @@ func GetScheduledTask(id int64) (*ScheduledTask, error) {
 	return &t, nil
 }
 
-func GetDueScheduledTasks(userID int64) ([]ScheduledTask, error) {
+func GetDueScheduledTasks(userID int64, cutoff time.Time) ([]ScheduledTask, error) {
 	rows, err := db.Query(
-		"SELECT id, user_id, schedule_expr, command, working_dir, on_success, on_failure, status, last_run, next_run, created_at FROM scheduled_tasks WHERE user_id = ? AND status = 'active' AND next_run <= datetime('now', 'localtime') ORDER BY next_run ASC",
-		userID,
+		"SELECT id, user_id, schedule_expr, command, working_dir, on_success, on_failure, status, last_run, next_run, created_at FROM scheduled_tasks WHERE user_id = ? AND status = 'active' AND next_run <= ? ORDER BY next_run ASC",
+		userID, cutoff,
 	)
 	if err != nil {
 		return nil, err
