@@ -1,6 +1,7 @@
 # Build artifacts
 dist/
 
+# sbeads
 .sbeads/
 
 # IDE
@@ -10,8 +11,8 @@ dist/
 # OS
 .DS_Store
 
-# sbeads
-.sbeads/
+# Feature planning scratch space (processed into docs/features/*.md and removed)
+docs/features/temp_feature_plan/
 
 # Environment
 .env

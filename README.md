@@ -202,22 +202,26 @@ Log retention is 30 days (auto-cleanup).
 
 ## Media Handling
 
-When you send media to the bot:
+When you send a **photo** to the bot:
 
-1. The bot downloads the file from Telegram
-2. Saves it to `workspace/downloads/{type}/`
-3. Constructs a prompt with the file path
-4. Sends to OpenCode server with context
+1. The bot downloads the largest available size from Telegram
+2. Saves it to `<workspace>/downloads/images/<filename>` using the original Telegram filename (which is guaranteed unique server-side)
+3. Builds a prompt of the form `File located at: <abs-path>\n\nUser message: <caption-or-empty>` and forwards it to OpenCode
+4. The agent can then read or otherwise act on the file via its normal tools
+
+Photos with no caption are accepted; the prompt will then contain only the file location.
 
 ### Supported Media Types
 
-| Telegram Type | Workspace Folder       |
-| ------------- | ---------------------- |
-| Photo         | `downloads/images/`    |
-| Audio         | `downloads/audio/`     |
-| Voice         | `downloads/audio/`     |
-| Document      | `downloads/documents/` |
-| Video         | `downloads/videos/`    |
+| Telegram Type | Supported? | Notes                                                |
+| ------------- | ---------- | ---------------------------------------------------- |
+| Photo         | Yes        | Downloaded and forwarded to the agent                |
+| Audio / Voice | No         | Silently ignored                                     |
+| Document      | No         | Silently ignored                                     |
+| Video         | No         | Silently ignored                                     |
+| Sticker       | No         | Silently ignored                                     |
+
+Sender-side media (the bot sending photos/documents back to you) is not implemented — all agent replies arrive as plain text messages.
 
 ## CLI Commands
 

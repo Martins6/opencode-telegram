@@ -11,6 +11,7 @@ import (
 	"github.com/martins6/opencode-telegram/internal/config"
 	"github.com/martins6/opencode-telegram/internal/database"
 	"github.com/martins6/opencode-telegram/internal/logger"
+	"github.com/martins6/opencode-telegram/internal/media"
 	"github.com/martins6/opencode-telegram/internal/opencode"
 	"github.com/martins6/opencode-telegram/internal/session"
 )
@@ -63,15 +64,53 @@ func DefaultHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 
 	log.Printf("Received message from user %d: %s", userID, update.Message.Text)
 
-	if strings.TrimSpace(update.Message.Text) == "" {
+	chatID := update.Message.Chat.ID
+	workspace := cfg.Workspace.Path
+
+	var userMessage string
+	if len(update.Message.Photo) > 0 {
+		largest := update.Message.Photo[len(update.Message.Photo)-1]
+		if largest.FileID != "" {
+			mediaType, _, _ := media.GetMediaType(update.Message)
+			data, tgPath, err := media.DownloadFile(ctx, b, largest.FileID)
+			if err != nil {
+				logger.Log(logger.ERROR, userID, fmt.Sprintf("Failed to download photo: %v", err))
+				b.SendMessage(ctx, &bot.SendMessageParams{
+					ChatID: chatID,
+					Text:   fmt.Sprintf("Error: failed to download photo: %v", err),
+				})
+				return
+			}
+			fileName := media.FilenameFromTelegramPath(tgPath)
+			localPath := media.GetFilePath(workspace, mediaType, fileName)
+			if err := media.SaveFile(localPath, data); err != nil {
+				logger.Log(logger.ERROR, userID, fmt.Sprintf("Failed to save photo: %v", err))
+				b.SendMessage(ctx, &bot.SendMessageParams{
+					ChatID: chatID,
+					Text:   fmt.Sprintf("Error: failed to save photo: %v", err),
+				})
+				return
+			}
+			caption := strings.TrimSpace(update.Message.Text)
+			if caption == "" {
+				caption = strings.TrimSpace(update.Message.Caption)
+			}
+			userMessage = media.BuildPrompt(localPath, caption)
+			logger.Log(logger.INPUT, userID, fmt.Sprintf("Photo received: fileID=%s size=%d saved=%s",
+				largest.FileID, largest.FileSize, localPath))
+			log.Printf("Downloaded photo for user %d to %s (%d bytes)", userID, localPath, len(data))
+		}
+	}
+	if userMessage == "" {
+		userMessage = update.Message.Text
+	}
+
+	if len(update.Message.Photo) == 0 && strings.TrimSpace(update.Message.Text) == "" {
 		logger.Log(logger.DEBUG, userID, "Received empty or whitespace-only message, skipping")
 		return
 	}
 
-	logger.Log(logger.INPUT, userID, fmt.Sprintf("Message: %s", update.Message.Text))
-
-	chatID := update.Message.Chat.ID
-	workspace := cfg.Workspace.Path
+	logger.Log(logger.INPUT, userID, fmt.Sprintf("Message: %s", userMessage))
 
 	sessionMgr := session.GetManager()
 	userSession, err := sessionMgr.GetSession(userID, workspace)
@@ -124,8 +163,9 @@ func DefaultHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 
 	log.Printf("Sending message to OpenCode for user %d (session: %s, agent: %s, model: %s, provider: %s)",
 		userID, sessionID, agent, model, provider)
+	log.Printf("Sending prompt for user %d: %s", userID, userMessage)
 
-	result, err := runner.Execute(sessionID, update.Message.Text)
+	result, err := runner.Execute(sessionID, userMessage)
 	if err != nil {
 		log.Printf("Error running opencode for user %d: %v", userID, err)
 
