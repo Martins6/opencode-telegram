@@ -61,7 +61,7 @@ func Load(cfgFile string) (*Config, error) {
 		viper.SetDefault("bot.timezone", "")
 		viper.SetDefault("workspace.path", defaultConfigPath)
 		viper.SetDefault("defaults.agent", "telegram-agent")
-		viper.SetDefault("defaults.model", "MiniMax-M2.7")
+		viper.SetDefault("defaults.model", "MiniMax-M3")
 		viper.SetDefault("defaults.provider", "minimax-coding-plan")
 	})
 

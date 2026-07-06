@@ -145,7 +145,7 @@ func DefaultHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 	}
 
 	if model == "" {
-		model = "MiniMax-M2.7"
+		model = "MiniMax-M3"
 	}
 	if provider == "" {
 		provider = "minimax-coding-plan"

@@ -192,7 +192,7 @@ func (n *NotifierService) processMails() {
 			agent = "build"
 		}
 		if model == "" {
-			model = "MiniMax-M2.7"
+			model = "MiniMax-M3"
 		}
 		if provider == "" {
 			provider = "minimax-coding-plan"

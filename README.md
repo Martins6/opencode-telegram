@@ -87,7 +87,7 @@ opencode-telegram config set bot.allowed_users [123456789, "YourUserName"]
 opencode-telegram config set defaults.agent "telegram-agent"
 
 # Optional: Set default model
-opencode-telegram config set defaults.model "MiniMax-M2.5"
+opencode-telegram config set defaults.model "MiniMax-M3"
 
 # Optional: Set default provider
 opencode-telegram config set defaults.provider "minimax-coding-plan"
@@ -123,7 +123,7 @@ path = "~/.opencode-telegram/"
 
 [defaults]
 agent = "telegram-agent"
-model = "MiniMax-M2.5"
+model = "MiniMax-M3"
 provider = "minimax-coding-plan"
 ```
 

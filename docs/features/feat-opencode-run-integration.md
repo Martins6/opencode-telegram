@@ -10,7 +10,7 @@ Switched from using `opencode serve` (HTTP server on port 4096) to using `openco
 - Uses --continue flag for multi-turn conversations
 - Adds /new-session command to start fresh conversations
 - Changes default agent from coder to build
-- Uses default model MiniMax-M2.5 with minimax-coding-plan provider
+- Uses default model MiniMax-M3 with minimax-coding-plan provider
 - Removes server startup from bot initialization
 - Session state tracked via IsNewSession flag
 

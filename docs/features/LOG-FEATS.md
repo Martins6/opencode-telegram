@@ -16,3 +16,4 @@
 2026-06-03-14-55 | Added runtime config hot-reload for defaults.agent/model/provider and bot.timezone in bot handlers and notifier
 2026-06-03-14-55 | Documented the `schedule set` prerequisite in TOOLS.md template, scheduling skill, and feature doc
 2026-07-05-21-42 | Added photo support to the Telegram bot - downloads photos, stores them under `<workspace>/downloads/images/`, and forwards a `File located at: <path>\n\nUser message: <caption>` prompt to OpenCode (audio/voice/document/video/sticker still ignored)
+2026-07-05-22-00 | Upgraded default model from MiniMax-M2.7 (and M2.5 in docs) to MiniMax-M3 across `internal/config/config.go`, `internal/bot/handlers.go`, `internal/bot/notifier.go`, README example, and `feat-opencode-run-integration.md`
