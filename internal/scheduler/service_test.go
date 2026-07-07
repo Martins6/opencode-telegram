@@ -330,3 +330,24 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 	os.Exit(code)
 }
+
+func TestTimezoneWarningLatch(t *testing.T) {
+	ResetTimezoneWarning()
+	if timezoneWarned.Load() {
+		t.Fatal("expected timezoneWarned to be false after ResetTimezoneWarning")
+	}
+
+	for i := 0; i < 5; i++ {
+		if !timezoneWarned.CompareAndSwap(false, true) {
+			t.Fatalf("iteration %d: expected CompareAndSwap(false, true) to succeed", i)
+		}
+		if timezoneWarned.CompareAndSwap(false, true) {
+			t.Fatalf("iteration %d: expected CompareAndSwap(false, true) to fail (already warned)", i)
+		}
+		ResetTimezoneWarning()
+	}
+
+	if timezoneWarned.Load() {
+		t.Fatal("expected timezoneWarned to be false after final ResetTimezoneWarning")
+	}
+}

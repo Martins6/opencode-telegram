@@ -11,6 +11,7 @@ import (
 
 	"github.com/martins6/acolyte/internal/config"
 	"github.com/martins6/acolyte/internal/database"
+	"github.com/martins6/acolyte/internal/scheduler"
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -26,6 +27,7 @@ var (
 )
 
 func requireTimezone(cmd *cobra.Command) error {
+	scheduler.ResetTimezoneWarning()
 	if cmd.Name() == "schedule" || cmd.Name() == "set" {
 		return nil
 	}

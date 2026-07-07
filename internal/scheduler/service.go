@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/go-telegram/bot"
@@ -15,6 +16,18 @@ import (
 	"github.com/martins6/acolyte/internal/logger"
 	"github.com/robfig/cron/v3"
 )
+
+// timezoneWarned is a latch that ensures the missing-timezone warning is
+// only logged once per process until ResetTimezoneWarning is called
+// (e.g., from the schedule CLI when the user pokes at scheduling).
+var timezoneWarned atomic.Bool
+
+// ResetTimezoneWarning re-arms the missing-timezone warning so it will be
+// logged once more on the next scheduler tick. Intended to be called from
+// the schedule CLI when the user interacts with scheduling.
+func ResetTimezoneWarning() {
+	timezoneWarned.Store(false)
+}
 
 type SchedulerService struct {
 	bot           *bot.Bot
@@ -77,7 +90,9 @@ func (s *SchedulerService) processDueTasks() {
 
 	loc, err := config.GetLocation()
 	if err != nil {
-		logger.LogDebug("Scheduler: cannot process tasks - %v. Please run 'acolyte schedule set --timezone <IANA>' first.", err)
+		if timezoneWarned.CompareAndSwap(false, true) {
+			logger.LogDebug("Scheduler: cannot process tasks - %v. Please run 'acolyte schedule set --timezone <IANA>' first.", err)
+		}
 		return
 	}
 	cutoff := time.Now().In(loc)
@@ -98,7 +113,9 @@ func (s *SchedulerService) executeTask(task database.ScheduledTask, userID int64
 
 	loc, err := config.GetLocation()
 	if err != nil {
-		logger.LogDebug("Scheduler: cannot execute task %d: %v", task.ID, err)
+		if timezoneWarned.CompareAndSwap(false, true) {
+			logger.LogDebug("Scheduler: cannot execute task %d: %v", task.ID, err)
+		}
 		database.UpdateScheduledTaskStatus(task.ID, "failed")
 		return
 	}
