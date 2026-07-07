@@ -9,6 +9,12 @@ import (
 
 var cfgFile string
 
+var versionValue = "dev"
+
+func SetVersion(v string) {
+	versionValue = v
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "acolyte",
 	Short: "Telegram bot gateway for OpenCode AI agent",

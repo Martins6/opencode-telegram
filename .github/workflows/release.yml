@@ -21,6 +21,8 @@ jobs:
           go-version: '1.23'
 
       - name: Build binaries
+        env:
+          VERSION: ${{ github.ref_name }}
         run: |
           mkdir -p dist
 
@@ -38,7 +40,7 @@ jobs:
               OUTPUT_NAME="${OUTPUT_NAME}.exe"
             fi
 
-            GOOS=$OS GOARCH=$ARCH go build -ldflags="-s -w" -o "dist/${OUTPUT_NAME}" .
+            GOOS=$OS GOARCH=$ARCH go build -ldflags="-s -w -X main.Version=${VERSION}" -o "dist/${OUTPUT_NAME}" .
           done
 
       - name: Create archives
@@ -52,10 +54,21 @@ jobs:
           done
           ls -la
 
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum acolyte_*.tar.gz > checksums.txt
+          cat checksums.txt
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*.tar.gz
+          files: |
+            dist/acolyte_linux_amd64.tar.gz
+            dist/acolyte_linux_arm64.tar.gz
+            dist/acolyte_darwin_amd64.tar.gz
+            dist/acolyte_darwin_arm64.tar.gz
+            dist/checksums.txt
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TAG_TOKEN }}

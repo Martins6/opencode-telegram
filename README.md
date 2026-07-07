@@ -231,6 +231,21 @@ Sender-side media (the bot sending photos/documents back to you) is not implemen
 | `acolyte config`      | Configuration management    |
 | `acolyte new [path]`  | Initialize new workspace    |
 | `acolyte logs [date]` | View logs                   |
+| `acolyte update`      | Check & apply updates       |
+| `acolyte version`     | Print binary version        |
+
+## Updating
+
+The bot can fetch and install its own updates from GitHub Releases.
+
+- `acolyte start` runs a non-blocking check at startup. If you're behind, it sends a Telegram notification to the allowed user saying which version is available.
+- `acolyte update --check` is the dry-run command. It prints current vs latest and exits without downloading.
+- `acolyte update` downloads the matching release asset, verifies its SHA256 against the `checksums.txt` attached to the release, replaces the binary in place, and (by default) re-execs the new process.
+- `acolyte update --version vX.Y.Z` pins a specific release instead of `latest`.
+- `acolyte update --restart=false` replaces the binary but leaves the running process alone; restart `acolyte start` to pick it up.
+- `acolyte update --yes` skips the confirmation prompt for non-interactive use.
+
+For system-wide installs (`/usr/local/bin`) the replace may hit a read-only file system. Reinstall via `install.sh` into `~/.local/bin`, or run the update under `sudo`.
 
 ## Development
 

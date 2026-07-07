@@ -7,11 +7,14 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/martins6/acolyte/internal/bot"
 	"github.com/martins6/acolyte/internal/config"
+	"github.com/martins6/acolyte/internal/database"
 	"github.com/martins6/acolyte/internal/logger"
 	"github.com/martins6/acolyte/internal/scheduler"
+	"github.com/martins6/acolyte/internal/updater"
 	"github.com/martins6/acolyte/internal/workspace"
 	"github.com/spf13/cobra"
 )
@@ -77,6 +80,8 @@ Press Ctrl+C to stop the bot gracefully.`,
 			log.Printf("Warning: Failed to start scheduler service: %v", err)
 		}
 
+		go checkForUpdatesAsync(ctx)
+
 		log.Println("Bot is running. Press Ctrl+C to stop.")
 
 		sigChan := make(chan os.Signal, 1)
@@ -98,4 +103,36 @@ Press Ctrl+C to stop the bot gracefully.`,
 
 func init() {
 	rootCmd.AddCommand(startCmd)
+}
+
+func checkForUpdatesAsync(parent context.Context) {
+	checkCtx, cancel := context.WithTimeout(parent, 5*time.Second)
+	defer cancel()
+
+	latest, outdated, err := updater.IsOutdated(checkCtx, updater.Options{})
+	if err != nil {
+		if err != updater.ErrDevBuild {
+			log.Printf("acolyte: update check failed: %v", err)
+		}
+		return
+	}
+	if !outdated {
+		return
+	}
+
+	msg := fmt.Sprintf("Acolyte %s is available. Run `acolyte update` to upgrade.", latest)
+
+	userID := config.GetAllowedUserChatID()
+	if userID == 0 {
+		log.Printf("acolyte: update available: %s (run 'acolyte update')", latest)
+		logger.LogDebug("update available: %s", latest)
+		return
+	}
+
+	if _, err := database.InsertNotification(userID, msg); err != nil {
+		log.Printf("acolyte: failed to queue update notification: %v", err)
+		return
+	}
+	log.Printf("acolyte: queued update notification for v%s", latest)
+	logger.LogDebug("queued update notification for v%s", latest)
 }
