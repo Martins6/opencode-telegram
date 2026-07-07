@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/martins6/opencode-telegram/internal/config"
-	"github.com/martins6/opencode-telegram/internal/database"
+	"github.com/martins6/acolyte/internal/config"
+	"github.com/martins6/acolyte/internal/database"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -27,7 +27,7 @@ var mailCmd = &cobra.Command{
 		workspacePath := viper.GetString("workspace.path")
 		if workspacePath == "" {
 			homeDir, _ := os.UserHomeDir()
-			workspacePath = filepath.Join(homeDir, ".opencode-telegram")
+			workspacePath = filepath.Join(homeDir, ".acolyte")
 		}
 		if err := database.Init(workspacePath); err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: Failed to initialize database: %v\n", err)

@@ -2,9 +2,9 @@
 SQLite-based notification and mail system that allows the OpenCode agent to send notifications and emails to the Telegram user. Includes internal Go-based scheduler for automated tasks, mail delivery triggers agent responses, and a runtime config hot-reload layer that keeps the running daemon in sync with `config.toml` mutations.
 
 # Details
-- Implements SQLite database at ~/.opencode-telegram/data.db
-- Provides notify command: opencode-telegram notify "message" - delivers as "Notification (Agent Unaware)"
-- Provides mail command: opencode-telegram mail send --sender X --subject Y --content Z
+- Implements SQLite database at ~/.acolyte/data.db
+- Provides notify command: acolyte notify "message" - delivers as "Notification (Agent Unaware)"
+- Provides mail command: acolyte mail send --sender X --subject Y --content Z
 - All mails delivered immediately (no urgency levels)
 - Mail delivery triggers OpenCode agent to respond with full mail details
 - Internal Go-based scheduler executes shell commands at specified times
@@ -12,7 +12,7 @@ SQLite-based notification and mail system that allows the OpenCode agent to send
 - Background polling service checks every 5 seconds
 - Scheduling skill guides agent on setting up scheduled tasks
 - Timezone is mandatory for the scheduler: `bot.timezone` in `config.toml` is the only source of truth
-- New `opencode-telegram schedule set --timezone <IANA>` subcommand persists the timezone (one-time setup, idempotent)
+- New `acolyte schedule set --timezone <IANA>` subcommand persists the timezone (one-time setup, idempotent)
 - All other `schedule` subcommands (`add`, `list`, `delete`, `run`) are gated on `bot.timezone` being set; the gate failure is the setup prompt
 - `notify` and `mail` are NOT gated - they have no time component
 - `parseSchedule` accepts a `*time.Location`; `at HH:MM` / `once HH:MM` / cron expressions are resolved in the configured zone
@@ -42,7 +42,7 @@ SQLite-based notification and mail system that allows the OpenCode agent to send
 
 # Configuration
 
-To receive notifications, add your Telegram chat ID to the config file at `~/.opencode-telegram/config.toml`:
+To receive notifications, add your Telegram chat ID to the config file at `~/.acolyte/config.toml`:
 
 ```toml
 [notifications]
@@ -56,7 +56,7 @@ To find your Telegram chat ID:
 To enable scheduling, set the timezone once:
 
 ```bash
-opencode-telegram schedule set --timezone America/Sao_Paulo
+acolyte schedule set --timezone America/Sao_Paulo
 ```
 
 This writes `[bot] timezone = "America/Sao_Paulo"` to `config.toml`. The running daemon picks it up on the next message / notifier / scheduler tick - no restart required. Re-run with a different IANA zone to change it; existing tasks are re-interpreted under the new zone on next fire.

@@ -31,7 +31,7 @@ var logsCmd = &cobra.Command{
 		workspacePath := viper.GetString("workspace.path")
 		if workspacePath == "" {
 			homeDir, _ := os.UserHomeDir()
-			workspacePath = homeDir + "/.opencode-telegram"
+			workspacePath = homeDir + "/.acolyte"
 		}
 
 		logFile := filepath.Join(workspacePath, ".logs", dateStr+".log")

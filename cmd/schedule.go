@@ -9,19 +9,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/martins6/opencode-telegram/internal/config"
-	"github.com/martins6/opencode-telegram/internal/database"
+	"github.com/martins6/acolyte/internal/config"
+	"github.com/martins6/acolyte/internal/database"
 	"github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var (
-	scheduleCmd        string
-	scheduleCommand    string
-	scheduleDir        string
-	scheduleOnSucc     string
-	scheduleOnFail     string
+	scheduleCmd         string
+	scheduleCommand     string
+	scheduleDir         string
+	scheduleOnSucc      string
+	scheduleOnFail      string
 	scheduleSetTimezone string
 )
 
@@ -30,7 +30,7 @@ func requireTimezone(cmd *cobra.Command) error {
 		return nil
 	}
 	if _, err := config.GetLocation(); err != nil {
-		return fmt.Errorf("timezone not configured. Run 'opencode-telegram schedule set --timezone <IANA>' first")
+		return fmt.Errorf("timezone not configured. Run 'acolyte schedule set --timezone <IANA>' first")
 	}
 	return nil
 }
@@ -47,7 +47,7 @@ var scheduleCmdMain = &cobra.Command{
 		workspacePath := viper.GetString("workspace.path")
 		if workspacePath == "" {
 			homeDir, _ := os.UserHomeDir()
-			workspacePath = filepath.Join(homeDir, ".opencode-telegram")
+			workspacePath = filepath.Join(homeDir, ".acolyte")
 		}
 		if err := database.Init(workspacePath); err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: Failed to initialize database: %v\n", err)
@@ -64,7 +64,7 @@ var scheduleSetCmd = &cobra.Command{
 before any other 'schedule' subcommand will work.
 
 Example:
-  opencode-telegram schedule set --timezone America/Sao_Paulo`,
+  acolyte schedule set --timezone America/Sao_Paulo`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if scheduleSetTimezone == "" {
 			return fmt.Errorf("timezone is required (use --timezone, e.g. America/Sao_Paulo)")
@@ -84,7 +84,7 @@ Example:
 		configPath := viper.ConfigFileUsed()
 		if configPath == "" {
 			homeDir, _ := os.UserHomeDir()
-			configPath = filepath.Join(homeDir, ".opencode-telegram", "config.toml")
+			configPath = filepath.Join(homeDir, ".acolyte", "config.toml")
 		}
 		if err := viper.WriteConfigAs(configPath); err != nil {
 			return fmt.Errorf("failed to write config: %w", err)
@@ -116,16 +116,16 @@ var scheduleAddCmd = &cobra.Command{
 		
 Examples:
   # Run once in 30 minutes
-  opencode-telegram schedule add --schedule "in 30m" --command "echo hello"
+  acolyte schedule add --schedule "in 30m" --command "echo hello"
   
   # Run at specific time
-  opencode-telegram schedule add --schedule "at 09:00" --command "backup.sh"
+  acolyte schedule add --schedule "at 09:00" --command "backup.sh"
   
   # Run daily at 9am (cron)
-  opencode-telegram schedule add --schedule "0 9 * * *" --command "daily-task.sh"
+  acolyte schedule add --schedule "0 9 * * *" --command "daily-task.sh"
   
   # Run every 15 minutes (cron)
-  opencode-telegram schedule add --schedule "*/15 * * * *" --command "check-status.sh"`,
+  acolyte schedule add --schedule "*/15 * * * *" --command "check-status.sh"`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if scheduleCmd == "" {
 			return fmt.Errorf("schedule expression is required (use --schedule)")
@@ -167,7 +167,7 @@ Examples:
 		dir := scheduleDir
 		if dir == "" {
 			homeDir, _ := os.UserHomeDir()
-			dir = filepath.Join(homeDir, ".opencode-telegram")
+			dir = filepath.Join(homeDir, ".acolyte")
 		}
 
 		id, err := database.InsertScheduledTask(userID, scheduleCmd, scheduleCommand, dir, onSuccess, onFailure, nextRun)
@@ -261,7 +261,7 @@ var scheduleRunCmd = &cobra.Command{
 		workingDir := task.WorkingDir
 		if workingDir == "" {
 			homeDir, _ := os.UserHomeDir()
-			workingDir = filepath.Join(homeDir, ".opencode-telegram")
+			workingDir = filepath.Join(homeDir, ".acolyte")
 		}
 
 		execCmd := exec.Command("sh", "-c", task.Command)

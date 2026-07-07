@@ -52,7 +52,7 @@ func Init(workspacePath string) error {
 		if err != nil {
 			return err
 		}
-		homeDir = filepath.Join(homeDir, ".opencode-telegram")
+		homeDir = filepath.Join(homeDir, ".acolyte")
 	}
 
 	if err := os.MkdirAll(homeDir, 0755); err != nil {
@@ -152,7 +152,7 @@ func getHomeDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(homeDir, ".opencode-telegram"), nil
+	return filepath.Join(homeDir, ".acolyte"), nil
 }
 
 func InsertNotification(userID int64, message string) (int64, error) {

@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/martins6/opencode-telegram/skills"
+	"github.com/martins6/acolyte/skills"
 )
 
 func CreateTemplate(workspacePath string) error {

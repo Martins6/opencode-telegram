@@ -10,7 +10,7 @@ import (
 var cfgFile string
 
 var rootCmd = &cobra.Command{
-	Use:   "opencode-telegram",
+	Use:   "acolyte",
 	Short: "Telegram bot gateway for OpenCode AI agent",
 	Long: `A Telegram bot that acts as a gateway to an OpenCode server,
 allowing users to interact with the OpenCode agent directly from Telegram.
@@ -27,5 +27,5 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ~/.opencode-telegram/config.toml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ~/.acolyte/config.toml)")
 }

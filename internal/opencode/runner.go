@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/martins6/opencode-telegram/internal/logger"
+	"github.com/martins6/acolyte/internal/logger"
 )
 
 type Runner struct {

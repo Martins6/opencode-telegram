@@ -2,8 +2,8 @@
 set -euo pipefail
 
 REPO_OWNER="martins6"
-REPO_NAME="opencode-telegram"
-BINARY_NAME="opencode-telegram"
+REPO_NAME="acolyte"
+BINARY_NAME="acolyte"
 INSTALL_PREFIX="${INSTALL_PREFIX:-$HOME/.local/bin}"
 
 VERSION=""
@@ -14,7 +14,7 @@ usage() {
     cat <<EOF
 Usage: $0 [OPTIONS]
 
-Installs the opencode-telegram binary from GitHub releases.
+Installs the acolyte binary from GitHub releases.
 
 OPTIONS:
     -v, --version VERSION    Install specific version
@@ -23,7 +23,7 @@ OPTIONS:
 
 EXAMPLES:
     $0                                    # Install latest version
-    curl -sSL https://raw.githubusercontent.com/martins6/opencode-telegram/main/install.sh | bash
+    curl -sSL https://raw.githubusercontent.com/martins6/acolyte/main/install.sh | bash
     $0 -v v1.0.0                          # Install specific version
     $0 -p /usr/local/bin                  # Install to /usr/local/bin
 

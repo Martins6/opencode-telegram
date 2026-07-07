@@ -1,6 +1,6 @@
-# Project: Telegram OpenCode Agent
+# Project: Acolyte
 
-A Telegram bot that acts as a gateway to an OpenCode server, enabling users to interact with the OpenCode AI agent directly from Telegram.
+A lightweight, dynamic Telegram-based agent gateway to OpenCode. The "acolyte" to your OpenCode server — a faithful helper that learns new skills over time.
 
 ## Core Tech
 

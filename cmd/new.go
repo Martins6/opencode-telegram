@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/martins6/opencode-telegram/internal/config"
-	"github.com/martins6/opencode-telegram/internal/workspace"
+	"github.com/martins6/acolyte/internal/config"
+	"github.com/martins6/acolyte/internal/workspace"
 	"github.com/spf13/cobra"
 )
 
@@ -31,7 +31,7 @@ This will create:
 			if err != nil {
 				return fmt.Errorf("failed to get home directory: %w", err)
 			}
-			path = homeDir + "/.opencode-telegram"
+			path = homeDir + "/.acolyte"
 		}
 
 		if err := workspace.CreateTemplate(path); err != nil {

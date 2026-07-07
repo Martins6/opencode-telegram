@@ -1,4 +1,4 @@
-module github.com/martins6/opencode-telegram
+module github.com/martins6/acolyte
 
 go 1.23.0
 

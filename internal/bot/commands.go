@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
-	"github.com/martins6/opencode-telegram/internal/session"
+	"github.com/martins6/acolyte/internal/session"
 )
 
 func RegisterHandlers(b *bot.Bot) {

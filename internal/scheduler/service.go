@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/go-telegram/bot"
-	"github.com/martins6/opencode-telegram/internal/config"
-	"github.com/martins6/opencode-telegram/internal/database"
-	"github.com/martins6/opencode-telegram/internal/logger"
+	"github.com/martins6/acolyte/internal/config"
+	"github.com/martins6/acolyte/internal/database"
+	"github.com/martins6/acolyte/internal/logger"
 	"github.com/robfig/cron/v3"
 )
 
@@ -77,7 +77,7 @@ func (s *SchedulerService) processDueTasks() {
 
 	loc, err := config.GetLocation()
 	if err != nil {
-		logger.LogDebug("Scheduler: cannot process tasks - %v. Please run 'opencode-telegram schedule set --timezone <IANA>' first.", err)
+		logger.LogDebug("Scheduler: cannot process tasks - %v. Please run 'acolyte schedule set --timezone <IANA>' first.", err)
 		return
 	}
 	cutoff := time.Now().In(loc)
@@ -128,15 +128,15 @@ func (s *SchedulerService) executeTask(task database.ScheduledTask, userID int64
 
 	cmdStr := strings.TrimSpace(task.Command)
 
-	isNotifyCommand := strings.HasPrefix(cmdStr, "opencode-telegram notify") ||
+	isNotifyCommand := strings.HasPrefix(cmdStr, "acolyte notify") ||
 		strings.HasPrefix(cmdStr, "notify")
 
 	if isNotifyCommand {
 		var msg string
-		if strings.HasPrefix(cmdStr, "opencode-telegram notify -m ") {
-			msg = strings.TrimPrefix(cmdStr, "opencode-telegram notify -m ")
-		} else if strings.HasPrefix(cmdStr, "opencode-telegram notify ") {
-			msg = strings.TrimPrefix(cmdStr, "opencode-telegram notify ")
+		if strings.HasPrefix(cmdStr, "acolyte notify -m ") {
+			msg = strings.TrimPrefix(cmdStr, "acolyte notify -m ")
+		} else if strings.HasPrefix(cmdStr, "acolyte notify ") {
+			msg = strings.TrimPrefix(cmdStr, "acolyte notify ")
 		} else if strings.HasPrefix(cmdStr, "notify -m ") {
 			msg = strings.TrimPrefix(cmdStr, "notify -m ")
 		} else if strings.HasPrefix(cmdStr, "notify ") {
@@ -153,7 +153,7 @@ func (s *SchedulerService) executeTask(task database.ScheduledTask, userID int64
 		return
 	}
 
-	if strings.HasPrefix(cmdStr, "opencode-telegram mail send") {
+	if strings.HasPrefix(cmdStr, "acolyte mail send") {
 		args := parseMailCommandArgs(cmdStr)
 		sender := args["--sender"]
 		subject := args["--subject"]
@@ -178,7 +178,7 @@ func (s *SchedulerService) executeTask(task database.ScheduledTask, userID int64
 
 	if workingDir == "" {
 		homeDir, _ := os.UserHomeDir()
-		workingDir = filepath.Join(homeDir, ".opencode-telegram")
+		workingDir = filepath.Join(homeDir, ".acolyte")
 	}
 
 	cmd := getCommandForTask(cmdStr)
@@ -226,7 +226,7 @@ func (s *SchedulerService) Stop() {
 }
 
 func getCommandForTask(cmdStr string) *exec.Cmd {
-	if strings.HasPrefix(cmdStr, "opencode-telegram ") {
+	if strings.HasPrefix(cmdStr, "acolyte ") {
 		execPath, err := os.Executable()
 		if err == nil {
 			args := strings.Fields(cmdStr)[1:]
@@ -246,7 +246,7 @@ func generateUUID() string {
 
 func parseMailCommandArgs(cmdStr string) map[string]string {
 	args := make(map[string]string)
-	remaining := strings.TrimPrefix(cmdStr, "opencode-telegram mail send")
+	remaining := strings.TrimPrefix(cmdStr, "acolyte mail send")
 	remaining = strings.TrimSpace(remaining)
 
 	flagNames := []string{"--sender", "--subject", "--content"}

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/martins6/opencode-telegram/internal/config"
+	"github.com/martins6/acolyte/internal/config"
 	"github.com/spf13/cobra"
 )
 

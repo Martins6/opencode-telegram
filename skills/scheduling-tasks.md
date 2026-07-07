@@ -17,14 +17,14 @@ Use scheduled tasks for:
 
 ## Built-in Scheduler Commands
 
-Use `opencode-telegram schedule` to manage scheduled tasks.
+Use `acolyte schedule` to manage scheduled tasks.
 
 ## Prerequisites
 
 Before any `schedule` subcommand works, set the timezone:
 
 ```bash
-opencode-telegram schedule set --timezone America/Sao_Paulo
+acolyte schedule set --timezone America/Sao_Paulo
 ```
 
 The bot refuses all other `schedule` subcommands (add/list/delete/run) until this is done. This is a one-time setup but is idempotent. `notify` and `mail` are unaffected — they have no time component.
@@ -44,13 +44,13 @@ All configs in `config.toml` (including timezone, `defaults.agent/model/provider
 
 ```bash
 # One-time schedules
-opencode-telegram schedule add -s "in 30m" -c "echo hello"
-opencode-telegram schedule add -s "at 09:00" -c "backup.sh"
-opencode-telegram schedule add -s "once 14:30" -c "task.sh"
+acolyte schedule add -s "in 30m" -c "echo hello"
+acolyte schedule add -s "at 09:00" -c "backup.sh"
+acolyte schedule add -s "once 14:30" -c "task.sh"
 
 # Cron schedules (recurring)
-opencode-telegram schedule add -s "0 9 * * *" -c "morning-task.sh"
-opencode-telegram schedule add -s "*/15 * * * *" -c "check-status.sh"
+acolyte schedule add -s "0 9 * * *" -c "morning-task.sh"
+acolyte schedule add -s "*/15 * * * *" -c "check-status.sh"
 ```
 
 ### Schedule Expression Formats
@@ -84,13 +84,13 @@ Standard cron format: `minute hour day-of-month month day-of-week`
 
 ```bash
 # List all scheduled tasks
-opencode-telegram schedule list
+acolyte schedule list
 
 # Delete a scheduled task
-opencode-telegram schedule delete <id>
+acolyte schedule delete <id>
 
 # Run a task immediately (for testing)
-opencode-telegram schedule run <id>
+acolyte schedule run <id>
 ```
 
 ## Output Handling
@@ -139,7 +139,7 @@ User: "Every morning at 7 AM, I want a weather summary"
 2. Ask: "What directory should this run in?"
 3. Set up:
 ```bash
-opencode-telegram schedule add -s "0 7 * * *" -c "weather-script.sh" --dir /path/to/scripts
+acolyte schedule add -s "0 7 * * *" -c "weather-script.sh" --dir /path/to/scripts
 ```
 
 ### Example 2: One-Time Reminder
@@ -148,7 +148,7 @@ User: "Remind me to call mom in 30 minutes"
 1. This is a one-time task
 2. Set up:
 ```bash
-opencode-telegram schedule add -s "in 30m" -c "echo 'Time to call mom!'"
+acolyte schedule add -s "in 30m" -c "echo 'Time to call mom!'"
 ```
 
 ### Example 3: Disk Space Monitoring
@@ -157,7 +157,7 @@ User: "Alert me if disk space is low every 4 hours"
 1. This should use notify on failure to alert the user
 2. Set up:
 ```bash
-opencode-telegram schedule add -s "0 */4 * * *" -c "df -h | awk '\$5 > 90 {print \"Disk at \" \$5}'"
+acolyte schedule add -s "0 */4 * * *" -c "df -h | awk '\$5 > 90 {print \"Disk at \" \$5}'"
 ```
 
 ### Example 4: GitHub Notifications
@@ -166,7 +166,7 @@ User: "Summarize my GitHub notifications daily at 8 AM"
 1. Ask: "Do you want to see the full summary in your working context (mail) or just a notification?"
 2. Set up:
 ```bash
-opencode-telegram schedule add -s "0 8 * * *" -c "github-summary.sh"
+acolyte schedule add -s "0 8 * * *" -c "github-summary.sh"
 ```
 
 ### Example 5: Backup Script with Custom Output
@@ -175,7 +175,7 @@ User: "Run my backup script daily at midnight and notify me"
 1. User wants notification on success (not mail)
 2. Set up:
 ```bash
-opencode-telegram schedule add -s "0 0 * * *" -c "backup.sh" --on-success notify
+acolyte schedule add -s "0 0 * * *" -c "backup.sh" --on-success notify
 ```
 
 ## Important Notes
@@ -184,7 +184,7 @@ opencode-telegram schedule add -s "0 0 * * *" -c "backup.sh" --on-success notify
 - Timezone must be set with `schedule set` before any scheduling will work
 - The running daemon picks up config changes within ~5 seconds (no restart needed)
 - Scheduled tasks are stored in SQLite and persist across bot restarts
-- Working directory defaults to the workspace folder (~/.opencode-telegram)
+- Working directory defaults to the workspace folder (~/.acolyte)
 - Use absolute paths in commands for reliability
 - Test commands manually before scheduling
 
@@ -203,6 +203,6 @@ When a user mentions:
 Apply this skill to:
 1. Understand the task and timing
 2. Ask user preferences for output handling
-3. Create the scheduled task using `opencode-telegram schedule add`
+3. Create the scheduled task using `acolyte schedule add`
 4. Test if possible
 5. Confirm with user

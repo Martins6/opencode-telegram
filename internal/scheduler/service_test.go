@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/martins6/opencode-telegram/internal/database"
+	"github.com/martins6/acolyte/internal/database"
 )
 
 func TestNotifyCommandDetection(t *testing.T) {
@@ -25,17 +25,17 @@ func TestNotifyCommandDetection(t *testing.T) {
 	}{
 		{
 			name:    "notify with -m flag",
-			command: `opencode-telegram notify -m "Hello World"`,
+			command: `acolyte notify -m "Hello World"`,
 			wantMsg: "Hello World",
 		},
 		{
 			name:    "notify with quoted message",
-			command: `opencode-telegram notify "Hello World"`,
+			command: `acolyte notify "Hello World"`,
 			wantMsg: "Hello World",
 		},
 		{
 			name:    "notify with double quotes",
-			command: `opencode-telegram notify "Test message"`,
+			command: `acolyte notify "Test message"`,
 			wantMsg: "Test message",
 		},
 	}
@@ -83,7 +83,7 @@ func TestMailCommandDetection(t *testing.T) {
 	taskID, err := database.InsertScheduledTask(
 		userID,
 		"0 9 * * *",
-		"opencode-telegram mail send --sender test@example.com --subject Test --content Hello",
+		"acolyte mail send --sender test@example.com --subject Test --content Hello",
 		workspacePath,
 		"mail",
 		"notify",
@@ -156,7 +156,7 @@ func TestSchedulerTaskExecution(t *testing.T) {
 	taskID, err := database.InsertScheduledTask(
 		userID,
 		"in 1m",
-		"opencode-telegram notify -m \"Test notification\"",
+		"acolyte notify -m \"Test notification\"",
 		workspacePath,
 		"notify",
 		"notify",
@@ -261,7 +261,7 @@ func TestMailContentParsing(t *testing.T) {
 	taskID, err := database.InsertScheduledTask(
 		userID,
 		"0 9 * * *",
-		`opencode-telegram mail send --sender test@example.com --subject Test --content "`+mailContent+`"`,
+		`acolyte mail send --sender test@example.com --subject Test --content "`+mailContent+`"`,
 		workspacePath,
 		"mail",
 		"notify",
@@ -297,7 +297,7 @@ func TestMailContentWithEmoji(t *testing.T) {
 	taskID, err := database.InsertScheduledTask(
 		userID,
 		"0 9 * * *",
-		`opencode-telegram mail send --sender Sunny --subject "Test Mail" --content "`+mailContent+`"`,
+		`acolyte mail send --sender Sunny --subject "Test Mail" --content "`+mailContent+`"`,
 		workspacePath,
 		"mail",
 		"notify",

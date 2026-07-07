@@ -1,7 +1,7 @@
 2026-03-07-14-30 | Fixed JSONL parsing issue where embedded newlines in JSON string values caused "No response from OpenCode" errors
 2026-03-07-14-45 | Removed /reset command - use /new-session to reset conversation while keeping user settings
 2026-03-07-14-45 | Removed log truncation to capture full OpenCode output without character limits
-2026-03-05-21-40 | Fixed config.toml not being created when running `opencode-telegram new` command
+2026-03-05-21-40 | Fixed config.toml not being created when running `acolyte new` command
 2026-03-05-22-00 | Fixed config set command overwriting entire config file instead of merging
 2026-03-05-22-00 | Fixed allowed_users config array parsing issue with JSON array strings
 2026-03-06-14-00 | Fixed empty response handling in OpenCode client to return meaningful error
@@ -16,6 +16,6 @@
 2026-03-24-00-00 | Fixed notify mail scheduler - command detection now handles -m flag format
 2026-03-24-00-00 | Fixed cron skill and tool visibility - updated TOOL.md and AGENTS.md workspace files
 2026-03-24-00-00 | Fixed database initialization - workspace path now passed to database.Init()
-2026-03-24-00-00 | Fixed database error - created .opencode-telegram directory before opening database
+2026-03-24-00-00 | Fixed database error - created .acolyte directory before opening database
 2026-03-06-14-00 | Fixed OpenCode server communication with proper session management
 2026-06-03-14-55 | Fixed scheduler firing in host localtime instead of user timezone - threaded bot.timezone through parseSchedule, executeTask, and GetDueScheduledTasks cutoff

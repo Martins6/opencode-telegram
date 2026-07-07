@@ -33,7 +33,7 @@ You are a personal assistant, friendly and helpful. You use emojis but not exces
 
 const BootstrapContent = `# Bootstrap Setup
 
-If you're reading this, then the user has just started fresh the experience of opencode-telegram. Guide him with your mission below.
+If you're reading this, then the user has just started fresh the experience of acolyte. Guide him with your mission below.
 
 ## Your Mission
 
@@ -54,33 +54,33 @@ You have access to the following notification tools:
 
 ## notify
 Silent background notifications for the user.
-- Command: opencode-telegram notify "Your message here"
+- Command: acolyte notify "Your message here"
 - Use for: Reminders, background tasks, non-urgent alerts
 - The user won't see these immediately - they check manually
 
 ## mail  
 User-facing messages that trigger the AI agent when delivered.
-- Command: opencode-telegram mail send --sender "sender" --subject "subject" --content "content"
+- Command: acolyte mail send --sender "sender" --subject "subject" --content "content"
 - Use for: Important messages, results, things the user should see
 - When delivered: The AI agent receives the mail and responds to the user proactively
 - This is different from notify (which is silent - agent is NOT triggered)
 
 ## schedule
 Schedule shell commands to run automatically.
-- Command: opencode-telegram schedule add -s "schedule" -c "command"
+- Command: acolyte schedule add -s "schedule" -c "command"
 - Use for: Automated tasks, periodic reports, recurring commands
 
 ### Schedule Examples
 
 One-time schedules:
-- opencode-telegram schedule add -s "in 30m" -c "echo hello" - Run in 30 minutes
-- opencode-telegram schedule add -s "at 09:00" -c "backup.sh" - Run at 9am today
-- opencode-telegram schedule add -s "once 14:30" -c "task.sh" - Run once at 2:30pm
+- acolyte schedule add -s "in 30m" -c "echo hello" - Run in 30 minutes
+- acolyte schedule add -s "at 09:00" -c "backup.sh" - Run at 9am today
+- acolyte schedule add -s "once 14:30" -c "task.sh" - Run once at 2:30pm
 
 Cron schedules (recurring):
-- opencode-telegram schedule add -s "0 9 * * *" -c "morning-task.sh" - Daily at 9am
-- opencode-telegram schedule add -s "*/15 * * * *" -c "check.sh" - Every 15 minutes
-- opencode-telegram schedule add -s "0 0 * * 0" -c "weekly-backup.sh" - Weekly on Sundays
+- acolyte schedule add -s "0 9 * * *" -c "morning-task.sh" - Daily at 9am
+- acolyte schedule add -s "*/15 * * * *" -c "check.sh" - Every 15 minutes
+- acolyte schedule add -s "0 0 * * 0" -c "weekly-backup.sh" - Weekly on Sundays
 
 ### Output Handling
 
@@ -96,8 +96,8 @@ Cron schedules (recurring):
 Before using schedule, you must set the timezone. The bot refuses all
 schedule subcommands until this is done — the failure is the prompt.
 
-- Run once: opencode-telegram schedule set --timezone <IANA>
-  Example: opencode-telegram schedule set --timezone America/Sao_Paulo
+- Run once: acolyte schedule set --timezone <IANA>
+  Example: acolyte schedule set --timezone America/Sao_Paulo
 - Idempotent — re-run with a different zone to change it.
 - notify and mail are not affected — they have no time component.
 - All configs (including timezone, defaults.agent/model/provider) live in
@@ -108,9 +108,9 @@ schedule subcommands until this is done — the failure is the prompt.
 const OpenCodeConfigContent = `{
   "$schema": "https://opencode.ai/config.json",
   "instructions": ["MAIN-PROMPTS/*.md"],
-  "default_agent": "telegram-agent",
+  "default_agent": "acolyte",
   "agent": {
-    "telegram-agent": {
+    "acolyte": {
       "description": "Personal AI assistant for Telegram",
       "prompt": "## Important - Always Be Aware\n\n- Always be aware of the current timestamp for anything that relates with time\n\nYou are a helpful AI assistant designed to work with users through a Telegram interface. Users will only see your last message."
     }
@@ -118,7 +118,7 @@ const OpenCodeConfigContent = `{
 }
 `
 
-const AgentsContent = `# Project: opencode-telegram
+const AgentsContent = `# Project: acolyte
 
 This workspace is powered by the **opencode.ai** harness. For more information about the harness, visit https://opencode.ai/
 
@@ -126,7 +126,7 @@ This workspace is powered by the **opencode.ai** harness. For more information a
 
 This is a Telegram bot that acts as a gateway to an OpenCode server, enabling users to interact with the OpenCode AI agent directly from Telegram.
 
-For more details, see: https://github.com/Martins6/opencode-telegram
+For more details, see: https://github.com/martins6/acolyte
 
 ## Workspace Structure
 
@@ -147,16 +147,16 @@ All instruction files in MAIN-PROMPTS/ are automatically loaded by OpenCode via 
 
 ## Available Tools
 
-- **notify**: Silent background notifications (opencode-telegram notify) - agent is NOT triggered
-- **mail**: User-facing messages that trigger the AI agent when delivered (opencode-telegram mail)
-- **schedule**: Schedule shell commands to run automatically (opencode-telegram schedule)
+- **notify**: Silent background notifications (acolyte notify) - agent is NOT triggered
+- **mail**: User-facing messages that trigger the AI agent when delivered (acolyte mail)
+- **schedule**: Schedule shell commands to run automatically (acolyte schedule)
 
 ## Scheduling Tasks
 
 Use the built-in scheduler for one-time or recurring tasks:
-- **opencode-telegram schedule add**: Add scheduled tasks
-- **opencode-telegram schedule list**: List all scheduled tasks
-- **opencode-telegram schedule delete [id]**: Delete a scheduled task
+- **acolyte schedule add**: Add scheduled tasks
+- **acolyte schedule list**: List all scheduled tasks
+- **acolyte schedule delete [id]**: Delete a scheduled task
 
 The scheduler runs commands and handles output automatically:
 - On success: Output is sent to mail, which triggers the AI agent to respond

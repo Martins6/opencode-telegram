@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/martins6/opencode-telegram/internal/config"
-	"github.com/martins6/opencode-telegram/internal/database"
+	"github.com/martins6/acolyte/internal/config"
+	"github.com/martins6/acolyte/internal/database"
 )
 
 func TestNotifierNotificationDelivery(t *testing.T) {

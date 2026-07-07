@@ -30,7 +30,7 @@ jobs:
             OS="${pair%/*}"
             ARCH="${pair#*/}"
 
-            OUTPUT_NAME="opencode-telegram_${OS}_${ARCH}"
+            OUTPUT_NAME="acolyte_${OS}_${ARCH}"
 
             echo "Building for ${OS}/${ARCH}..."
 
@@ -44,11 +44,11 @@ jobs:
       - name: Create archives
         run: |
           cd dist
-          for f in opencode-telegram_*; do
+          for f in acolyte_*; do
             archive="${f}.tar.gz"
-            mv "$f" "opencode-telegram"
-            tar -czf "$archive" "opencode-telegram"
-            mv "opencode-telegram" "$f"
+            mv "$f" "acolyte"
+            tar -czf "$archive" "acolyte"
+            mv "acolyte" "$f"
           done
           ls -la
 

@@ -9,11 +9,11 @@ import (
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
-	"github.com/martins6/opencode-telegram/internal/config"
-	"github.com/martins6/opencode-telegram/internal/database"
-	"github.com/martins6/opencode-telegram/internal/logger"
-	"github.com/martins6/opencode-telegram/internal/opencode"
-	"github.com/martins6/opencode-telegram/internal/session"
+	"github.com/martins6/acolyte/internal/config"
+	"github.com/martins6/acolyte/internal/database"
+	"github.com/martins6/acolyte/internal/logger"
+	"github.com/martins6/acolyte/internal/opencode"
+	"github.com/martins6/acolyte/internal/session"
 )
 
 type NotifierSender interface {
@@ -51,7 +51,7 @@ func StartNotifier(ctx context.Context, b *bot.Bot) error {
 		workspacePath = cfg.Workspace.Path
 	} else {
 		homeDir, _ := os.UserHomeDir()
-		workspacePath = filepath.Join(homeDir, ".opencode-telegram")
+		workspacePath = filepath.Join(homeDir, ".acolyte")
 	}
 
 	if err := database.Init(workspacePath); err != nil {
@@ -143,7 +143,7 @@ func (n *NotifierService) processMails() {
 		workspace = cfg.Workspace.Path
 	} else {
 		homeDir, _ := os.UserHomeDir()
-		workspace = filepath.Join(homeDir, ".opencode-telegram")
+		workspace = filepath.Join(homeDir, ".acolyte")
 	}
 
 	mails, err := database.GetUnsentMails(userChatID)

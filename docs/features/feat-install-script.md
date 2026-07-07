@@ -1,6 +1,6 @@
 # Overview
 
-Shell script that enables one-line installation of the opencode-telegram binary via curl from GitHub releases.
+Shell script that enables one-line installation of the acolyte binary via curl from GitHub releases.
 
 # Details
 

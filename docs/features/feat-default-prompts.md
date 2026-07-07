@@ -1,6 +1,6 @@
 # Overview
 
-Improves the default markdown templates created when running `opencode-telegram new`. The templates provide better prompts and instructions for the OpenCode agent.
+Improves the default markdown templates created when running `acolyte new`. The templates provide better prompts and instructions for the OpenCode agent.
 
 # Details
 

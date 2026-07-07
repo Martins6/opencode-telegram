@@ -8,12 +8,12 @@ import (
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
-	"github.com/martins6/opencode-telegram/internal/config"
-	"github.com/martins6/opencode-telegram/internal/database"
-	"github.com/martins6/opencode-telegram/internal/logger"
-	"github.com/martins6/opencode-telegram/internal/media"
-	"github.com/martins6/opencode-telegram/internal/opencode"
-	"github.com/martins6/opencode-telegram/internal/session"
+	"github.com/martins6/acolyte/internal/config"
+	"github.com/martins6/acolyte/internal/database"
+	"github.com/martins6/acolyte/internal/logger"
+	"github.com/martins6/acolyte/internal/media"
+	"github.com/martins6/acolyte/internal/opencode"
+	"github.com/martins6/acolyte/internal/session"
 )
 
 var userSettings map[int64]*UserSettings

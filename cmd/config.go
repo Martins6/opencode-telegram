@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/martins6/opencode-telegram/internal/config"
+	"github.com/martins6/acolyte/internal/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -32,7 +32,7 @@ var configSetCmd = &cobra.Command{
 		}
 
 		homeDir, _ := os.UserHomeDir()
-		configPath := fmt.Sprintf("%s/.opencode-telegram/config.toml", homeDir)
+		configPath := fmt.Sprintf("%s/.acolyte/config.toml", homeDir)
 
 		viper.SetConfigType("toml")
 		viper.SetConfigFile(configPath)

@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/martins6/opencode-telegram/internal/database"
+	"github.com/martins6/acolyte/internal/database"
 	"github.com/spf13/viper"
 )
 
@@ -54,13 +54,13 @@ func Load(cfgFile string) (*Config, error) {
 		return nil, err
 	}
 
-	defaultConfigPath := filepath.Join(homeDir, ".opencode-telegram")
+	defaultConfigPath := filepath.Join(homeDir, ".acolyte")
 	setDefaultsOnce.Do(func() {
 		viper.SetDefault("bot.token", "")
 		viper.SetDefault("bot.allowed_user_id", "")
 		viper.SetDefault("bot.timezone", "")
 		viper.SetDefault("workspace.path", defaultConfigPath)
-		viper.SetDefault("defaults.agent", "telegram-agent")
+		viper.SetDefault("defaults.agent", "acolyte")
 		viper.SetDefault("defaults.model", "MiniMax-M3")
 		viper.SetDefault("defaults.provider", "minimax-coding-plan")
 	})

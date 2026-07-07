@@ -1,6 +1,6 @@
-# OpenCode Telegram Agent
+# Acolyte
 
-A Telegram bot that acts as a gateway to an OpenCode server, allowing users to interact with the OpenCode AI agent directly from Telegram. It functions a bit like OpenClaw.
+A lightweight, dynamic Telegram-based agent gateway to OpenCode. The "acolyte" to your OpenCode server — a faithful helper that learns new skills over time.
 
 ## Installation
 
@@ -13,7 +13,7 @@ A Telegram bot that acts as a gateway to an OpenCode server, allowing users to i
 ### Quick Install (Linux/macOS)
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/martins6/opencode-telegram/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/martins6/acolyte/main/install.sh | bash
 ```
 
 This will install the binary to `~/.local/bin`. Make sure to add it to your PATH:
@@ -25,13 +25,13 @@ export PATH="$HOME/.local/bin:$PATH"
 Or install system-wide with sudo:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/martins6/opencode-telegram/main/install.sh | bash -s -- -p /usr/local/bin
+curl -sSL https://raw.githubusercontent.com/martins6/acolyte/main/install.sh | bash -s -- -p /usr/local/bin
 ```
 
 Install a specific version:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/martins6/opencode-telegram/main/install.sh | bash -s -- -v v0.1.0
+curl -sSL https://raw.githubusercontent.com/martins6/acolyte/main/install.sh | bash -s -- -v v0.1.0
 ```
 
 #### Development Install (Linux/macOS)
@@ -65,41 +65,41 @@ This script builds the binary from local source code instead of downloading from
 ### 2. Initialize Workspace
 
 ```bash
-opencode-telegram new
+acolyte new
 ```
 
-This creates a workspace at `~/.opencode-telegram/` with template files.
+This creates a workspace at `~/.acolyte/` with template files.
 
 ### 3. Configure the Bot
 
-Use the `opencode auth login`, choose your provider. Then also set it for `opencode-telegram`. Please, check [models.dev](https://models.dev/) for the standard reference of names for providers and models used in OpenCode. You can also inspect the logs for any mismatch of the naming.
+Use the `opencode auth login`, choose your provider. Then also set it for `acolyte`. Please, check [models.dev](https://models.dev/) for the standard reference of names for providers and models used in OpenCode. You can also inspect the logs for any mismatch of the naming.
 
 To set the specific settings for your bot, you can use the following commands:
 
 ```bash
 # Set your bot token
-opencode-telegram config set bot.token "YOUR_BOT_TOKEN"
+acolyte config set bot.token "YOUR_BOT_TOKEN"
 
 # Add your Telegram user ID to allowed users
-opencode-telegram config set bot.allowed_users [123456789, "YourUserName"]
+acolyte config set bot.allowed_users [123456789, "YourUserName"]
 
 # Optional: Set default agent
-opencode-telegram config set defaults.agent "telegram-agent"
+acolyte config set defaults.agent "acolyte"
 
 # Optional: Set default model
-opencode-telegram config set defaults.model "MiniMax-M3"
+acolyte config set defaults.model "MiniMax-M3"
 
 # Optional: Set default provider
-opencode-telegram config set defaults.provider "minimax-coding-plan"
+acolyte config set defaults.provider "minimax-coding-plan"
 
 # View current configuration
-opencode-telegram config list
+acolyte config list
 ```
 
 ### 4. Start the Bot
 
 ```bash
-opencode-telegram start
+acolyte start
 ```
 
 This will:
@@ -111,7 +111,7 @@ Press `Ctrl+C` to stop gracefully.
 
 ## Configuration
 
-The configuration file is stored at `~/.opencode-telegram/config.toml`:
+The configuration file is stored at `~/.acolyte/config.toml`:
 
 ```toml
 [bot]
@@ -119,10 +119,10 @@ token = "YOUR_BOT_TOKEN"
 allowed_users = [123456789]
 
 [workspace]
-path = "~/.opencode-telegram/"
+path = "~/.acolyte/"
 
 [defaults]
-agent = "telegram-agent"
+agent = "acolyte"
 model = "MiniMax-M3"
 provider = "minimax-coding-plan"
 ```
@@ -131,9 +131,9 @@ provider = "minimax-coding-plan"
 
 | Command                                      | Description            |
 | -------------------------------------------- | ---------------------- |
-| `opencode-telegram config set <key> <value>` | Set a config value     |
-| `opencode-telegram config get <key>`         | Get a config value     |
-| `opencode-telegram config list`              | List all config values |
+| `acolyte config set <key> <value>` | Set a config value     |
+| `acolyte config get <key>`         | Get a config value     |
+| `acolyte config list`              | List all config values |
 
 ### Config Keys
 
@@ -160,7 +160,7 @@ provider = "minimax-coding-plan"
 ## Workspace Structure
 
 ```
-~/.opencode-telegram/
+~/.acolyte/
 ├── AGENTS.md           # Agent definitions
 ├── SOUL.md            # System operator behavior
 ├── USER.md            # User information
@@ -179,16 +179,16 @@ provider = "minimax-coding-plan"
 
 ## Logging
 
-Logs are stored in `~/.opencode-telegram/.logs/` with format `YYYY-MM-DD.log`.
+Logs are stored in `~/.acolyte/.logs/` with format `YYYY-MM-DD.log`.
 
 ### View Logs
 
 ```bash
 # View today's logs
-opencode-telegram logs today
+acolyte logs today
 
 # View specific date
-opencode-telegram logs 2026-03-05
+acolyte logs 2026-03-05
 ```
 
 Log format:
@@ -227,10 +227,10 @@ Sender-side media (the bot sending photos/documents back to you) is not implemen
 
 | Command                         | Description                 |
 | ------------------------------- | --------------------------- |
-| `opencode-telegram start`       | Start bot + OpenCode server |
-| `opencode-telegram config`      | Configuration management    |
-| `opencode-telegram new [path]`  | Initialize new workspace    |
-| `opencode-telegram logs [date]` | View logs                   |
+| `acolyte start`       | Start bot + OpenCode server |
+| `acolyte config`      | Configuration management    |
+| `acolyte new [path]`  | Initialize new workspace    |
+| `acolyte logs [date]` | View logs                   |
 
 ## Development
 

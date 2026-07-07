@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/go-telegram/bot"
-	"github.com/martins6/opencode-telegram/internal/config"
+	"github.com/martins6/acolyte/internal/config"
 )
 
 var Bot *bot.Bot

@@ -8,11 +8,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/martins6/opencode-telegram/internal/bot"
-	"github.com/martins6/opencode-telegram/internal/config"
-	"github.com/martins6/opencode-telegram/internal/logger"
-	"github.com/martins6/opencode-telegram/internal/scheduler"
-	"github.com/martins6/opencode-telegram/internal/workspace"
+	"github.com/martins6/acolyte/internal/bot"
+	"github.com/martins6/acolyte/internal/config"
+	"github.com/martins6/acolyte/internal/logger"
+	"github.com/martins6/acolyte/internal/scheduler"
+	"github.com/martins6/acolyte/internal/workspace"
 	"github.com/spf13/cobra"
 )
 
@@ -35,7 +35,7 @@ Press Ctrl+C to stop the bot gracefully.`,
 		workspacePath := cfg.Workspace.Path
 		if workspacePath == "" {
 			homeDir, _ := os.UserHomeDir()
-			workspacePath = homeDir + "/.opencode-telegram"
+			workspacePath = homeDir + "/.acolyte"
 		}
 
 		if err := workspace.ValidateWorkspace(workspacePath); err != nil {

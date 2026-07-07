@@ -50,7 +50,7 @@ main() {
 
     if [ ! -f "go.mod" ] || [ ! -f "main.go" ]; then
         print_error "Not in a valid OpenCode Telegram Agent source directory"
-        print_info "Run this script from the opencode-telegram source root"
+        print_info "Run this script from the acolyte source root"
         exit 1
     fi
 
@@ -67,12 +67,12 @@ main() {
     fi
 
     print_info "Building from local source..."
-    go build -ldflags "-s -w" -o "opencode-telegram" .
-    print_success "Built opencode-telegram"
+    go build -ldflags "-s -w" -o "acolyte" .
+    print_success "Built acolyte"
 
     if command -v codesign &> /dev/null; then
-        codesign --force --sign - --deep "opencode-telegram" 2>/dev/null || true
-        if codesign -v "opencode-telegram" 2>/dev/null; then
+        codesign --force --sign - --deep "acolyte" 2>/dev/null || true
+        if codesign -v "acolyte" 2>/dev/null; then
             print_success "Code signing verified"
         else
             print_error "Code signing verification failed (binary may still work)"
@@ -80,33 +80,33 @@ main() {
     fi
 
     print_info "Installing to $TARGET_DIR..."
-    rm -f "$TARGET_DIR/opencode-telegram"
-    cp -f "opencode-telegram" "$TARGET_DIR/"
-    chmod +x "$TARGET_DIR/opencode-telegram"
+    rm -f "$TARGET_DIR/acolyte"
+    cp -f "acolyte" "$TARGET_DIR/"
+    chmod +x "$TARGET_DIR/acolyte"
     
     if command -v codesign &> /dev/null; then
-        codesign --force --sign - --deep "$TARGET_DIR/opencode-telegram" 2>/dev/null || true
+        codesign --force --sign - --deep "$TARGET_DIR/acolyte" 2>/dev/null || true
     fi
     
     print_info "Verifying binary execution..."
-    if "$TARGET_DIR/opencode-telegram" --help >/dev/null 2>&1; then
+    if "$TARGET_DIR/acolyte" --help >/dev/null 2>&1; then
         print_success "Binary executes correctly"
     else
         print_error "Binary verification failed - it may have been killed by macOS"
-        print_info "Try running: codesign --force --sign - --deep $TARGET_DIR/opencode-telegram"
+        print_info "Try running: codesign --force --sign - --deep $TARGET_DIR/acolyte"
     fi
     
-    print_success "Installed to $TARGET_DIR/opencode-telegram"
+    print_success "Installed to $TARGET_DIR/acolyte"
 
-    rm -f "opencode-telegram"
+    rm -f "acolyte"
 
-    if [ -x "$TARGET_DIR/opencode-telegram" ]; then
+    if [ -x "$TARGET_DIR/acolyte" ]; then
         print_success "Installation complete!"
         echo ""
         echo "Quick start:"
-        print_cmd "  opencode-telegram new         # Initialize workspace"
-        print_cmd "  opencode-telegram config set bot.token \"YOUR_TOKEN\"  # Set bot token"
-        print_cmd "  opencode-telegram start       # Start the bot"
+        print_cmd "  acolyte new         # Initialize workspace"
+        print_cmd "  acolyte config set bot.token \"YOUR_TOKEN\"  # Set bot token"
+        print_cmd "  acolyte start       # Start the bot"
         echo ""
         
         if [[ ":$PATH:" != *":$TARGET_DIR:"* ]]; then
