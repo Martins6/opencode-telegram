@@ -20,6 +20,7 @@ SQLite-based notification and mail system that allows the OpenCode agent to send
 - Runtime config hot-reload: `internal/bot/handlers.go` and `internal/bot/notifier.go` call `config.Load("")` on every message / mail tick so changes to `defaults.agent`, `defaults.model`, `defaults.provider`, and `bot.timezone` are picked up within microseconds, with no daemon restart
 - Restart-only fields: `bot.token`, `bot.allowed_user_id`, `workspace.path` (token would require tearing down the Telegram client connection; intentionally not hot-reloaded)
 - `config.GetLocation()` returns `(*time.Location, error)` and exposes `ErrTimezoneNotConfigured` for callers that want to gate on the zone
+- Missing-timezone warning is logged once per process: `processDueTasks` uses an `atomic.Bool` latch so the debug line fires the first time, then stays quiet until `ResetTimezoneWarning()` is called from `cmd/schedule.go` when the user touches scheduling
 
 # File Paths
 - cmd/notify.go

@@ -20,3 +20,4 @@
 2026-03-06-14-00 | Fixed OpenCode server communication with proper session management
 2026-06-03-14-55 | Fixed scheduler firing in host localtime instead of user timezone - threaded bot.timezone through parseSchedule, executeTask, and GetDueScheduledTasks cutoff
 2026-07-07-10-42 | Fixed leftover rename references in local_install.sh - "OpenCode Telegram Agent" → "Acolyte" (welcome string in internal/bot/commands.go:37 still pending)
+2026-07-07-12-11 | Fixed scheduler spamming the missing-timezone DEBUG log every 5s - `internal/scheduler/service.go` now uses an `atomic.Bool` latch in `processDueTasks` so the warning fires once per process; `cmd/schedule.go` calls `ResetTimezoneWarning()` so the hint reappears once on the next tick after the user touches scheduling.
