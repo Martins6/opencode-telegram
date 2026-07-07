@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# OpenCode Telegram Agent Local Installation Script
+# Acolyte Local Installation Script
 # Builds from local source code instead of cloning from remote
 
 set -e
@@ -44,12 +44,12 @@ get_install_dir() {
 }
 
 main() {
-    print_info "Installing OpenCode Telegram Agent from local source"
+    print_info "Installing Acolyte from local source"
     print_info "====================================================="
     echo ""
 
     if [ ! -f "go.mod" ] || [ ! -f "main.go" ]; then
-        print_error "Not in a valid OpenCode Telegram Agent source directory"
+        print_error "Not in a valid acolyte source directory"
         print_info "Run this script from the acolyte source root"
         exit 1
     fi

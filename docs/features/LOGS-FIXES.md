@@ -19,3 +19,4 @@
 2026-03-24-00-00 | Fixed database error - created .acolyte directory before opening database
 2026-03-06-14-00 | Fixed OpenCode server communication with proper session management
 2026-06-03-14-55 | Fixed scheduler firing in host localtime instead of user timezone - threaded bot.timezone through parseSchedule, executeTask, and GetDueScheduledTasks cutoff
+2026-07-07-10-42 | Fixed leftover rename references in local_install.sh - "OpenCode Telegram Agent" → "Acolyte" (welcome string in internal/bot/commands.go:37 still pending)
