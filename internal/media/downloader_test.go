@@ -3,6 +3,8 @@ package media
 import (
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/go-telegram/bot/models"
@@ -114,14 +116,49 @@ func TestGetMediaType_Empty(t *testing.T) {
 
 func TestGetFilePath(t *testing.T) {
 	ws := t.TempDir()
-	path := GetFilePath(ws, MediaTypePhoto, "x.jpg")
-	want := filepath.Join(ws, "downloads", "images", "x.jpg")
-	if path != want {
-		t.Errorf("GetFilePath = %q, want %q", path, want)
+	path := GetFilePath(ws, MediaTypePhoto, ".jpg")
+	dir := filepath.Join(ws, "downloads", "images")
+	if !strings.HasPrefix(path, dir+string(filepath.Separator)) {
+		t.Errorf("GetFilePath = %q, want prefix %q", path, dir)
 	}
-	if _, err := os.Stat(filepath.Join(ws, "downloads", "images")); err != nil {
+	if !strings.HasSuffix(path, ".jpg") {
+		t.Errorf("GetFilePath = %q, want suffix .jpg", path)
+	}
+	re := regexp.MustCompile(`\d{8}_\d{6}\.jpg$`)
+	if !re.MatchString(path) {
+		t.Errorf("GetFilePath = %q, want to match timestamp pattern", path)
+	}
+	if _, err := os.Stat(dir); err != nil {
 		t.Errorf("downloads/images directory was not created: %v", err)
 	}
+}
+
+func TestGenerateTimestampedFilename(t *testing.T) {
+	dir := t.TempDir()
+	re := regexp.MustCompile(`^\d{8}_\d{6}\.jpg$`)
+
+	t.Run("basic", func(t *testing.T) {
+		name := GenerateTimestampedFilename(dir, ".jpg")
+		if !re.MatchString(name) {
+			t.Errorf("GenerateTimestampedFilename = %q, want to match %s", name, re)
+		}
+	})
+
+	t.Run("collision", func(t *testing.T) {
+		name1 := GenerateTimestampedFilename(dir, ".jpg")
+		if err := os.WriteFile(filepath.Join(dir, name1), []byte("x"), 0644); err != nil {
+			t.Fatalf("failed to seed collision file: %v", err)
+		}
+		name2 := GenerateTimestampedFilename(dir, ".jpg")
+		ext := ".jpg"
+		expected := name1[:len(name1)-len(ext)] + "_1" + ext
+		if name2 != expected {
+			t.Errorf("GenerateTimestampedFilename on collision = %q, want %q", name2, expected)
+		}
+		if _, err := os.Stat(filepath.Join(dir, name2)); err == nil {
+			t.Errorf("expected %s not to exist yet", name2)
+		}
+	})
 }
 
 func TestBuildPrompt(t *testing.T) {
@@ -137,24 +174,5 @@ func TestBuildPrompt_EmptyCaption(t *testing.T) {
 	want := "File located at: /tmp/x.jpg\n\nUser message: "
 	if got != want {
 		t.Errorf("BuildPrompt = %q, want %q", got, want)
-	}
-}
-
-func TestFilenameFromTelegramPath(t *testing.T) {
-	cases := []struct {
-		in, want string
-	}{
-		{"photos/file_42.jpg", "file_42.jpg"},
-		{"documents/report.pdf", "report.pdf"},
-		{"file_42.jpg", "file_42.jpg"},
-		{"a/b/c/d.txt", "d.txt"},
-		{"", "."},
-		{"/", "/"},
-	}
-	for _, tc := range cases {
-		got := FilenameFromTelegramPath(tc.in)
-		if got != tc.want {
-			t.Errorf("FilenameFromTelegramPath(%q) = %q, want %q", tc.in, got, tc.want)
-		}
 	}
 }

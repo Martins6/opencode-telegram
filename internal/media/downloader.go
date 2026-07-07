@@ -44,10 +44,10 @@ func GetMediaType(message *models.Message) (MediaType, string, error) {
 	}
 }
 
-func GetFilePath(workspace string, mediaType MediaType, fileName string) string {
+func GetFilePath(workspace string, mediaType MediaType, ext string) string {
 	downloadsDir := filepath.Join(workspace, "downloads", string(mediaType))
 	os.MkdirAll(downloadsDir, 0755)
-	return filepath.Join(downloadsDir, fileName)
+	return filepath.Join(downloadsDir, GenerateTimestampedFilename(downloadsDir, ext))
 }
 
 func DownloadFile(ctx context.Context, b *bot.Bot, fileID string) ([]byte, string, error) {
@@ -81,6 +81,13 @@ func BuildPrompt(mediaPath string, userMessage string) string {
 	return fmt.Sprintf("File located at: %s\n\nUser message: %s", mediaPath, userMessage)
 }
 
-func FilenameFromTelegramPath(telegramPath string) string {
-	return filepath.Base(telegramPath)
+func GenerateTimestampedFilename(dir, ext string) string {
+	base := time.Now().UTC().Format("20060102_150405")
+	name := base + ext
+	for i := 1; ; i++ {
+		if _, err := os.Stat(filepath.Join(dir, name)); err != nil {
+			return name
+		}
+		name = fmt.Sprintf("%s_%d%s", base, i, ext)
+	}
 }

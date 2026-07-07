@@ -6,7 +6,7 @@ Core Telegram bot that enables users to interact with OpenCode AI agent from Tel
 
 - Implements Telegram Bot API using go-telegram/bot library
 - Handles text messages and forwards to OpenCode
-- Accepts photo uploads: downloads them, stores them under `<workspace>/downloads/images/`, and forwards a `File located at: <path>\n\nUser message: <caption>` prompt to OpenCode
+- Accepts photo uploads: downloads them, stores them under `<workspace>/downloads/images/` with UTC-timestamped filenames (e.g. `20240706_143052.jpg`, with `_1`/`_2` collision suffixes for same-second duplicates), and forwards a `File located at: <path>\n\nUser message: <caption>` prompt to OpenCode
 - Documents, audio, voice, video, stickers, contacts, and locations are ignored (only photos are wired in)
 - Sender-side media (the bot sending photos/documents back to Telegram) is NOT implemented; all replies are plain text
 - Implements slash commands: /set-agent, /set-model, /set-provider, /workspace, /help, /new-session

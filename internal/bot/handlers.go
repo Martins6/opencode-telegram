@@ -71,8 +71,8 @@ func DefaultHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 	if len(update.Message.Photo) > 0 {
 		largest := update.Message.Photo[len(update.Message.Photo)-1]
 		if largest.FileID != "" {
-			mediaType, _, _ := media.GetMediaType(update.Message)
-			data, tgPath, err := media.DownloadFile(ctx, b, largest.FileID)
+			mediaType, ext, _ := media.GetMediaType(update.Message)
+			data, _, err := media.DownloadFile(ctx, b, largest.FileID)
 			if err != nil {
 				logger.Log(logger.ERROR, userID, fmt.Sprintf("Failed to download photo: %v", err))
 				b.SendMessage(ctx, &bot.SendMessageParams{
@@ -81,8 +81,7 @@ func DefaultHandler(ctx context.Context, b *bot.Bot, update *models.Update) {
 				})
 				return
 			}
-			fileName := media.FilenameFromTelegramPath(tgPath)
-			localPath := media.GetFilePath(workspace, mediaType, fileName)
+			localPath := media.GetFilePath(workspace, mediaType, ext)
 			if err := media.SaveFile(localPath, data); err != nil {
 				logger.Log(logger.ERROR, userID, fmt.Sprintf("Failed to save photo: %v", err))
 				b.SendMessage(ctx, &bot.SendMessageParams{
