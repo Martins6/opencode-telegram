@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/go-telegram/bot"
@@ -22,6 +23,13 @@ const (
 	MediaTypeDocument MediaType = "documents"
 	MediaTypeVideo    MediaType = "videos"
 )
+
+type MediaMetadata struct {
+	Kind         string
+	FileSize     int64
+	MimeType     string
+	OriginalName string
+}
 
 func GetMediaType(message *models.Message) (MediaType, string, error) {
 	switch {
@@ -77,8 +85,50 @@ func SaveFile(path string, data []byte) error {
 	return os.WriteFile(path, data, 0644)
 }
 
-func BuildPrompt(mediaPath string, userMessage string) string {
-	return fmt.Sprintf("File located at: %s\n\nUser message: %s", mediaPath, userMessage)
+func BuildPrompt(mediaPath string, meta MediaMetadata, userMessage string) string {
+	var b strings.Builder
+	b.WriteString("File located at: ")
+	b.WriteString(mediaPath)
+	b.WriteByte('\n')
+	b.WriteString("File type: ")
+	b.WriteString(meta.Kind)
+	b.WriteByte('\n')
+	fmt.Fprintf(&b, "File size: %d bytes\n", meta.FileSize)
+	if meta.OriginalName != "" {
+		b.WriteString("Original name: ")
+		b.WriteString(meta.OriginalName)
+		b.WriteByte('\n')
+	}
+	if meta.MimeType != "" {
+		b.WriteString("MIME type: ")
+		b.WriteString(meta.MimeType)
+		b.WriteByte('\n')
+	}
+	b.WriteString("\nUser message: ")
+	b.WriteString(userMessage)
+	return b.String()
+}
+
+func ExtractFileRef(message *models.Message) (fileID string, fileSize int64, mimeType string, originalName string, mediaType MediaType, ext string, ok bool) {
+	switch {
+	case len(message.Photo) > 0:
+		largest := message.Photo[len(message.Photo)-1]
+		return largest.FileID, int64(largest.FileSize), "", "", MediaTypePhoto, ".jpg", true
+	case message.Audio != nil:
+		return message.Audio.FileID, message.Audio.FileSize, message.Audio.MimeType, message.Audio.FileName, MediaTypeAudio, ".mp3", true
+	case message.Voice != nil:
+		return message.Voice.FileID, message.Voice.FileSize, message.Voice.MimeType, "", MediaTypeVoice, ".ogg", true
+	case message.Document != nil:
+		ext := ".bin"
+		if message.Document.FileName != "" {
+			ext = filepath.Ext(message.Document.FileName)
+		}
+		return message.Document.FileID, message.Document.FileSize, message.Document.MimeType, message.Document.FileName, MediaTypeDocument, ext, true
+	case message.Video != nil:
+		return message.Video.FileID, message.Video.FileSize, message.Video.MimeType, message.Video.FileName, MediaTypeVideo, ".mp4", true
+	default:
+		return "", 0, "", "", "", "", false
+	}
 }
 
 func GenerateTimestampedFilename(dir, ext string) string {
