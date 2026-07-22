@@ -27,6 +27,8 @@ type NotifierService struct {
 	sender NotifierSender
 }
 
+var globalNotifier *NotifierService
+
 type realSender struct {
 	bot *bot.Bot
 }
@@ -63,6 +65,7 @@ func StartNotifier(ctx context.Context, b *bot.Bot) error {
 		ctx: ctx,
 	}
 	n.ctx, n.cancel = context.WithCancel(ctx)
+	globalNotifier = n
 
 	if b != nil {
 		n.sender = &realSender{bot: b}
@@ -263,5 +266,9 @@ func (n *NotifierService) sendFallbackMailNotification(userChatID int64, mail da
 }
 
 func StopNotifier() {
-	logger.LogDebug("Stopping notifier service...")
+	if globalNotifier != nil && globalNotifier.cancel != nil {
+		globalNotifier.cancel()
+		globalNotifier = nil
+	}
+	logger.LogDebug("Notifier service stopped")
 }

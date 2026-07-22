@@ -38,6 +38,8 @@ type SchedulerService struct {
 	cron          *cron.Cron
 }
 
+var globalScheduler *SchedulerService
+
 func StartScheduler(ctx context.Context, b *bot.Bot, workspacePath string) error {
 	if err := database.Init(workspacePath); err != nil {
 		return fmt.Errorf("failed to initialize database: %w", err)
@@ -53,6 +55,7 @@ func StartScheduler(ctx context.Context, b *bot.Bot, workspacePath string) error
 		cron:          cron.New(),
 	}
 	s.ctx, s.cancel = context.WithCancel(ctx)
+	globalScheduler = s
 
 	s.cron.Start()
 	go s.run()
@@ -239,7 +242,17 @@ func (s *SchedulerService) Stop() {
 	if s != nil && s.cancel != nil {
 		s.cancel()
 	}
+	if s != nil && s.cron != nil {
+		<-s.ctx.Done()
+	}
 	logger.LogDebug("Stopping scheduler service...")
+}
+
+func Stop() {
+	if globalScheduler != nil {
+		globalScheduler.Stop()
+		globalScheduler = nil
+	}
 }
 
 func getCommandForTask(cmdStr string) *exec.Cmd {

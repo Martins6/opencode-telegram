@@ -12,3 +12,5 @@ Telegram bot gateway that allows users to interact with an OpenCode AI agent dir
 - feat-default-prompts.md - Improved default prompts for workspace template files
 - feat-notify-mail-cron.md - SQLite-based notification and mail system with scheduler, timezone gating, and runtime config hot-reload
 - feat-self-update.md - In-app self-update via GitHub releases with `acolyte update`/`version` and non-blocking startup outdated-check
+- feat-background-service.md - Singleton per-user background service (systemd / launchd) with public lifecycle commands, strict workspace validation, atomic runtime state, session wrappers, last-N log tail, and service-aware self-update
+- feat-pr-reviewer.md - OpenCode-powered PR reviewer workflow and `/oc`/`/opencode` comment triggers, with a custom Acolyte-aware review checklist

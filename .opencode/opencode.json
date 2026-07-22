@@ -1,0 +1,5 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "minimax-coding-plan/MiniMax-M3",
+  "default_agent": "build"
+}

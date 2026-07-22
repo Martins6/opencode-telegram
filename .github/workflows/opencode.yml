@@ -1,0 +1,43 @@
+name: opencode
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+jobs:
+  opencode:
+    if: |
+      (github.event_name == 'pull_request' && !github.event.pull_request.draft) ||
+      (github.event_name == 'issue_comment' && (
+        contains(github.event.comment.body, '/oc') ||
+        contains(github.event.comment.body, '/opencode')
+      )) ||
+      (github.event_name == 'pull_request_review_comment' && (
+        contains(github.event.comment.body, '/oc') ||
+        contains(github.event.comment.body, '/opencode')
+      ))
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: read
+      issues: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Run OpenCode
+        uses: anomalyco/opencode/github@latest
+        env:
+          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+        with:
+          model: minimax-coding-plan/MiniMax-M3
+          agent: pr-reviewer
+          prompt: |
+            You are the PR reviewer for Acolyte, a Telegram bot gateway to OpenCode. Read `AGENTS.md` first for full project context.
+            Use the pr-reviewer agent. Treat the comment body (for /oc, /opencode) or the PR diff (for pull_request events) as the input. Default behavior on pull_request events: review the entire PR.
+            When triggered by a comment like `/oc` or `/opencode`, follow the user's instruction literally. When triggered by a PR event with no instruction, do a full review.
