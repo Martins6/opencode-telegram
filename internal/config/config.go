@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/martins6/acolyte/internal/database"
+	"github.com/pelletier/go-toml/v2"
 	"github.com/spf13/viper"
 )
 
@@ -125,3 +127,135 @@ func GetLocation() (*time.Location, error) {
 }
 
 func SetForTest(c *Config) { globalConfig = c }
+
+var ErrConfigNotFound = errors.New("singleton config not found")
+
+func SingletonConfigPath() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(homeDir, ".acolyte", "config.toml"), nil
+}
+
+func LoadIfExists(cfgFile string) (*Config, error) {
+	loadMu.Lock()
+	defer loadMu.Unlock()
+
+	viper.SetConfigType("toml")
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+
+	defaultConfigPath := filepath.Join(homeDir, ".acolyte")
+	setDefaultsOnce.Do(func() {
+		viper.SetDefault("bot.token", "")
+		viper.SetDefault("bot.allowed_user_id", "")
+		viper.SetDefault("bot.timezone", "")
+		viper.SetDefault("workspace.path", defaultConfigPath)
+		viper.SetDefault("defaults.agent", "acolyte")
+		viper.SetDefault("defaults.model", "MiniMax-M3")
+		viper.SetDefault("defaults.provider", "minimax-coding-plan")
+	})
+
+	target := cfgFile
+	if target == "" {
+		target = filepath.Join(defaultConfigPath, "config.toml")
+	}
+	if _, err := os.Stat(target); err != nil {
+		if os.IsNotExist(err) {
+			return nil, ErrConfigNotFound
+		}
+		return nil, err
+	}
+
+	viper.SetConfigFile(target)
+	if err := viper.ReadInConfig(); err != nil {
+		return nil, err
+	}
+
+	var config Config
+	if err := viper.Unmarshal(&config); err != nil {
+		return nil, err
+	}
+	globalConfig = &config
+	return &config, nil
+}
+
+func LoadSingleton() (*Config, error) {
+	path, err := SingletonConfigPath()
+	if err != nil {
+		return nil, err
+	}
+	return LoadIfExists(path)
+}
+
+func WriteWorkspacePath(workspace string) error {
+	path, err := SingletonConfigPath()
+	if err != nil {
+		return err
+	}
+
+	abs, err := filepath.Abs(workspace)
+	if err != nil {
+		return fmt.Errorf("resolve absolute workspace: %w", err)
+	}
+
+	loadMu.Lock()
+	defer loadMu.Unlock()
+
+	viper.SetConfigFile(path)
+	viper.SetConfigType("toml")
+
+	current := &Config{}
+	if _, err := os.Stat(path); err == nil {
+		if err := viper.ReadInConfig(); err != nil {
+			return fmt.Errorf("read singleton config: %w", err)
+		}
+		if err := viper.Unmarshal(current); err != nil {
+			return fmt.Errorf("parse singleton config: %w", err)
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return fmt.Errorf("ensure singleton directory: %w", err)
+	}
+
+	if current.Bot.Token == "" {
+		current.Bot.Token = viper.GetString("bot.token")
+	}
+	if current.Bot.AllowedUserID == "" {
+		current.Bot.AllowedUserID = viper.GetString("bot.allowed_user_id")
+	}
+	if current.Defaults.Agent == "" {
+		current.Defaults.Agent = viper.GetString("defaults.agent")
+	}
+	if current.Defaults.Model == "" {
+		current.Defaults.Model = viper.GetString("defaults.model")
+	}
+	if current.Defaults.Provider == "" {
+		current.Defaults.Provider = viper.GetString("defaults.provider")
+	}
+
+	current.Workspace.Path = abs
+
+	var buf bytes.Buffer
+	enc := toml.NewEncoder(&buf)
+	enc.SetIndentTables(true)
+	if err := enc.Encode(current); err != nil {
+		return fmt.Errorf("encode singleton config: %w", err)
+	}
+	if err := os.WriteFile(path, buf.Bytes(), 0o644); err != nil {
+		return fmt.Errorf("write singleton config: %w", err)
+	}
+
+	viper.Set("workspace.path", abs)
+	if globalConfig != nil {
+		globalConfig.Workspace.Path = abs
+	}
+	return nil
+}

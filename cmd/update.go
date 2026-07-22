@@ -75,9 +75,16 @@ applying it. Run 'acolyte update' explicitly to perform the upgrade.`,
 		}
 
 		restartArgs := filterUpdateArg(os.Args[1:])
+		wasRunning := false
+		if mgr, err := serviceFactory(); err == nil {
+			if st, err := mgr.Status(ctx); err == nil {
+				wasRunning = st.Loaded
+			}
+		}
+
 		applyOpts := updater.Options{
 			TargetVersion:   updatePinVersion,
-			Restart:         updateRestart,
+			Restart:         false,
 			RestartArgs:     restartArgs,
 			SignMac:         true,
 			APITimeout:      30 * time.Second,
@@ -92,10 +99,25 @@ applying it. Run 'acolyte update' explicitly to perform the upgrade.`,
 		}
 
 		fmt.Printf("Updated to %s.\n", rel.Tag)
-		if !updateRestart {
+
+		if !wasRunning || !updateRestart {
 			exe, _ := os.Executable()
 			fmt.Printf("Restart the bot to use the new version. (binary at %s)\n", exe)
+			return nil
 		}
+
+		mgr, err := serviceFactory()
+		if err != nil {
+			fmt.Printf("Updated; could not reach the service manager to restart: %v\n", err)
+			return nil
+		}
+		if err := mgr.Restart(ctx); err != nil {
+			return fmt.Errorf("restart service: %w", err)
+		}
+		if _, err := mgr.WaitReady(ctx, 10*time.Second); err != nil {
+			return fmt.Errorf("service did not become ready after update: %w", err)
+		}
+		fmt.Println("Service restarted under the new binary.")
 		return nil
 	},
 }

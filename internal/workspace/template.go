@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/martins6/acolyte/skills"
 )
@@ -98,5 +99,98 @@ func ValidateWorkspace(workspacePath string) error {
 		}
 	}
 
+	return nil
+}
+
+type StrictValidator struct {
+	RequiredDirs  []string
+	RequiredFiles []string
+}
+
+func DefaultStrictValidator() StrictValidator {
+	return StrictValidator{
+		RequiredDirs: []string{
+			"downloads/images",
+			"downloads/audio",
+			"downloads/documents",
+			"downloads/videos",
+			"conversations",
+			".logs",
+			".opencode/agents",
+			".opencode/skills",
+			"MAIN-PROMPTS",
+		},
+		RequiredFiles: []string{
+			"opencode.json",
+			"AGENTS.md",
+			"MAIN-PROMPTS/SOUL.md",
+			"MAIN-PROMPTS/USER.md",
+			"MAIN-PROMPTS/IDENTITY.md",
+			"MAIN-PROMPTS/BOOTSTRAP.md",
+			"MAIN-PROMPTS/TOOLS.md",
+		},
+	}
+}
+
+type StrictValidationError struct {
+	Workspace    string
+	MissingDirs  []string
+	MissingFiles []string
+}
+
+func (e *StrictValidationError) Error() string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "workspace %q is not a valid Acolyte workspace:", e.Workspace)
+	if len(e.MissingDirs) > 0 {
+		b.WriteString("\n  missing directories:")
+		for _, d := range e.MissingDirs {
+			fmt.Fprintf(&b, "\n    - %s", d)
+		}
+	}
+	if len(e.MissingFiles) > 0 {
+		b.WriteString("\n  missing files:")
+		for _, f := range e.MissingFiles {
+			fmt.Fprintf(&b, "\n    - %s", f)
+		}
+	}
+	fmt.Fprintf(&b, "\n\nfix: run `acolyte new %s` to bootstrap the missing files", e.Workspace)
+	return b.String()
+}
+
+func StrictValidate(workspacePath string) error {
+	return StrictValidateWith(workspacePath, DefaultStrictValidator())
+}
+
+func StrictValidateWith(workspacePath string, validator StrictValidator) error {
+	info, err := os.Stat(workspacePath)
+	if err != nil {
+		return fmt.Errorf("workspace directory %q is not accessible: %w", workspacePath, err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("workspace %q exists but is not a directory", workspacePath)
+	}
+
+	var verr StrictValidationError
+	verr.Workspace = workspacePath
+
+	for _, dir := range validator.RequiredDirs {
+		full := filepath.Join(workspacePath, dir)
+		info, err := os.Stat(full)
+		if err != nil || !info.IsDir() {
+			verr.MissingDirs = append(verr.MissingDirs, dir)
+		}
+	}
+
+	for _, file := range validator.RequiredFiles {
+		full := filepath.Join(workspacePath, file)
+		info, err := os.Stat(full)
+		if err != nil || info.IsDir() {
+			verr.MissingFiles = append(verr.MissingFiles, file)
+		}
+	}
+
+	if len(verr.MissingDirs) > 0 || len(verr.MissingFiles) > 0 {
+		return &verr
+	}
 	return nil
 }

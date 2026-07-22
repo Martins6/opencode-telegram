@@ -225,14 +225,37 @@ Sender-side media (the bot sending photos/documents back to you) is not implemen
 
 ## CLI Commands
 
-| Command                         | Description                 |
-| ------------------------------- | --------------------------- |
-| `acolyte start`       | Start bot + OpenCode server |
-| `acolyte config`      | Configuration management    |
-| `acolyte new [path]`  | Initialize new workspace    |
-| `acolyte logs [date]` | View logs                   |
-| `acolyte update`      | Check & apply updates       |
-| `acolyte version`     | Print binary version        |
+| Command                                  | Description                                                                      |
+| ---------------------------------------- | -------------------------------------------------------------------------------- |
+| `acolyte start [--workspace PATH]`       | Install + enable + start the per-user service                                    |
+| `acolyte stop [--forever]`               | Stop the service; `--forever` also disables autostart                            |
+| `acolyte restart`                        | Restart the service                                                              |
+| `acolyte status`                         | Print running/stopped, workspace and autostart status (exit 3 when stopped)      |
+| `acolyte session list`                   | List OpenCode sessions in the active workspace                                   |
+| `acolyte session <sessionID>`            | Export the given OpenCode session as JSON                                        |
+| `acolyte logs [N] [--date today|DATE]`   | Tail the last N application log entries (default 10; day filter is optional)    |
+| `acolyte config`                         | Configuration management                                                         |
+| `acolyte new [path]`                     | Initialize a new workspace                                                        |
+| `acolyte update`                         | Check & apply updates (restarts via the service manager)                         |
+| `acolyte version`                        | Print binary version                                                              |
+
+### Running as a background service
+
+`acolyte start` installs a per-user service and enables it for the next login:
+
+- **Linux**: systemd user service at `~/.config/systemd/user/acolyte.service` (start at login via `WantedBy=default.target`).
+- **macOS**: LaunchAgent at `~/Library/LaunchAgents/com.martins6.acolyte.plist` (auto-loaded via `RunAtLoad`).
+
+The worker process is the same binary invoked as `acolyte __daemon`. Inspect or remove it with:
+
+```bash
+acolyte status      # running|stopped, workspace, autostart
+acolyte stop        # stop, keep autostart
+acolyte stop --forever  # stop and disable autostart
+acolyte start       # start (re-enables autostart)
+```
+
+The active workspace persists in `~/.acolyte/config.toml` and can be changed with `acolyte start --workspace PATH` only while the service is stopped.
 
 ## Updating
 
@@ -240,9 +263,9 @@ The bot can fetch and install its own updates from GitHub Releases.
 
 - `acolyte start` runs a non-blocking check at startup. If you're behind, it sends a Telegram notification to the allowed user saying which version is available.
 - `acolyte update --check` is the dry-run command. It prints current vs latest and exits without downloading.
-- `acolyte update` downloads the matching release asset, verifies its SHA256 against the `checksums.txt` attached to the release, replaces the binary in place, and (by default) re-execs the new process.
+- `acolyte update` downloads the matching release asset, verifies its SHA256 against the `checksums.txt` attached to the release, replaces the binary in place, and (by default) calls `systemctl --user restart` (Linux) or `launchctl kickstart -k` (macOS) so the service picks up the new version under the supervisor.
 - `acolyte update --version vX.Y.Z` pins a specific release instead of `latest`.
-- `acolyte update --restart=false` replaces the binary but leaves the running process alone; restart `acolyte start` to pick it up.
+- `acolyte update --restart=false` replaces the binary but does not restart the service.
 - `acolyte update --yes` skips the confirmation prompt for non-interactive use.
 
 For system-wide installs (`/usr/local/bin`) the replace may hit a read-only file system. Reinstall via `install.sh` into `~/.local/bin`, or run the update under `sudo`.

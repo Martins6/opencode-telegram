@@ -2,137 +2,119 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log"
 	"os"
-	"os/signal"
-	"syscall"
+	"path/filepath"
 	"time"
 
-	"github.com/martins6/acolyte/internal/bot"
 	"github.com/martins6/acolyte/internal/config"
-	"github.com/martins6/acolyte/internal/database"
-	"github.com/martins6/acolyte/internal/logger"
-	"github.com/martins6/acolyte/internal/scheduler"
-	"github.com/martins6/acolyte/internal/updater"
+	"github.com/martins6/acolyte/internal/service"
 	"github.com/martins6/acolyte/internal/workspace"
 	"github.com/spf13/cobra"
 )
 
+var (
+	startWorkspace string
+)
+
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: "Start bot in workspace",
-	Long: `Starts the Telegram bot in the configured workspace.
+	Short: "Install, enable and start the Acolyte user service",
+	Long: `Configure and start the Acolyte singleton user service.
 
-The bot will:
-1. Initialize the Telegram bot
-2. Handle incoming messages using opencode run
-
-Press Ctrl+C to stop the bot gracefully.`,
+Use ` + "`acolyte start --workspace PATH`" + ` to validate and persist a new
+workspace before starting. The workspace must already be initialized with
+` + "`acolyte new PATH`" + `. The flag is rejected while the service is running.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := config.Load("")
+		ctx := cmd.Context()
+		if ctx == nil {
+			ctx = context.Background()
+		}
+
+		bin, err := os.Executable()
 		if err != nil {
-			return fmt.Errorf("failed to load config: %w", err)
+			return fmt.Errorf("locate acolyte binary: %w", err)
 		}
 
-		workspacePath := cfg.Workspace.Path
-		if workspacePath == "" {
-			homeDir, _ := os.UserHomeDir()
-			workspacePath = homeDir + "/.acolyte"
+		mgr, err := serviceFactory()
+		if err != nil {
+			return err
 		}
 
-		if err := workspace.ValidateWorkspace(workspacePath); err != nil {
-			log.Printf("Workspace not found, creating: %v", err)
-			if err := workspace.CreateTemplate(workspacePath); err != nil {
-				return fmt.Errorf("failed to create workspace: %w", err)
+		path, err := config.SingletonConfigPath()
+		if err != nil {
+			return fmt.Errorf("locate singleton config: %w", err)
+		}
+
+		cfg, err := config.LoadIfExists(path)
+		if err != nil {
+			if errors.Is(err, config.ErrConfigNotFound) {
+				return fmt.Errorf("singleton config not found at %s\n\nfix: run `acolyte new %s` and edit the config token", path, filepath.Dir(path))
+			}
+			return fmt.Errorf("load singleton config: %w", err)
+		}
+
+		desired := cfg.Workspace.Path
+		if desired == "" {
+			desired = filepath.Join(filepath.Dir(path))
+		}
+
+		if startWorkspace != "" {
+			abs, err := filepath.Abs(startWorkspace)
+			if err != nil {
+				return fmt.Errorf("resolve --workspace: %w", err)
+			}
+			if err := workspace.StrictValidate(abs); err != nil {
+				return err
+			}
+			status, err := mgr.Status(ctx)
+			if err == nil && status.Loaded {
+				return fmt.Errorf("cannot switch workspace while Acolyte is running\n\nfirst stop the service with `acolyte stop` and try again")
+			}
+			if err := config.WriteWorkspacePath(abs); err != nil {
+				return fmt.Errorf("persist workspace: %w", err)
+			}
+			desired = abs
+		} else if desired == "" {
+			return fmt.Errorf("no workspace configured\n\nfix: run `acolyte new %s`", filepath.Dir(path))
+		} else {
+			if err := workspace.StrictValidate(desired); err != nil {
+				return fmt.Errorf("configured workspace is invalid\n\n%w", err)
 			}
 		}
 
-		if err := logger.Initialize(workspacePath); err != nil {
-			log.Printf("Warning: Failed to initialize logger: %v", err)
+		cfgSvc := service.ServiceConfig{Workspace: desired, Binary: bin}
+
+		if _, err := os.Stat(mgr.UnitPath()); err != nil {
+			if err := mgr.Install(ctx, cfgSvc); err != nil {
+				return fmt.Errorf("install service: %w", err)
+			}
+		} else {
+			if err := mgr.Install(ctx, cfgSvc); err != nil {
+				return fmt.Errorf("update service: %w", err)
+			}
 		}
 
-		logger.LogDebug("Logger initialized in workspace: %s", workspacePath)
-
-		log.Println("Initializing Telegram bot...")
-		bot.SetConfig(cfg)
-		telegramBot, err := bot.Initialize(cfg)
-		if err != nil {
-			return fmt.Errorf("failed to initialize bot: %w", err)
+		if err := mgr.Enable(ctx); err != nil {
+			return fmt.Errorf("enable service: %w", err)
+		}
+		if err := mgr.Start(ctx); err != nil {
+			return fmt.Errorf("start service: %w", err)
 		}
 
-		if telegramBot != nil {
-			bot.RegisterHandlers(telegramBot)
+		if _, err := mgr.WaitReady(ctx, 5*time.Second); err != nil {
+			return fmt.Errorf("service did not become ready in time: %w", err)
 		}
 
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
-		if err := bot.Start(ctx, telegramBot); err != nil {
-			return fmt.Errorf("failed to start bot: %w", err)
-		}
-
-		if err := bot.StartNotifier(ctx, telegramBot); err != nil {
-			log.Printf("Warning: Failed to start notifier service: %v", err)
-		}
-
-		if err := scheduler.StartScheduler(ctx, telegramBot, workspacePath); err != nil {
-			log.Printf("Warning: Failed to start scheduler service: %v", err)
-		}
-
-		go checkForUpdatesAsync(ctx)
-
-		log.Println("Bot is running. Press Ctrl+C to stop.")
-
-		sigChan := make(chan os.Signal, 1)
-		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-		<-sigChan
-
-		log.Println("Shutting down...")
-
-		if telegramBot != nil {
-			log.Println("Stopping Telegram bot...")
-		}
-
-		logger.Close()
-
-		log.Println("Shutdown complete")
+		fmt.Println("Acolyte started.")
+		fmt.Println("status:  acolyte status")
+		fmt.Println("logs:    acolyte logs")
 		return nil
 	},
 }
 
 func init() {
+	startCmd.Flags().StringVar(&startWorkspace, "workspace", "", "set a new workspace path (only when stopped)")
 	rootCmd.AddCommand(startCmd)
-}
-
-func checkForUpdatesAsync(parent context.Context) {
-	checkCtx, cancel := context.WithTimeout(parent, 5*time.Second)
-	defer cancel()
-
-	latest, outdated, err := updater.IsOutdated(checkCtx, updater.Options{})
-	if err != nil {
-		if err != updater.ErrDevBuild {
-			log.Printf("acolyte: update check failed: %v", err)
-		}
-		return
-	}
-	if !outdated {
-		return
-	}
-
-	msg := fmt.Sprintf("Acolyte %s is available. Run `acolyte update` to upgrade.", latest)
-
-	userID := config.GetAllowedUserChatID()
-	if userID == 0 {
-		log.Printf("acolyte: update available: %s (run 'acolyte update')", latest)
-		logger.LogDebug("update available: %s", latest)
-		return
-	}
-
-	if _, err := database.InsertNotification(userID, msg); err != nil {
-		log.Printf("acolyte: failed to queue update notification: %v", err)
-		return
-	}
-	log.Printf("acolyte: queued update notification for v%s", latest)
-	logger.LogDebug("queued update notification for v%s", latest)
 }
