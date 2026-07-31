@@ -106,6 +106,64 @@ func TestGetMediaType_Video(t *testing.T) {
 	}
 }
 
+func TestGetMediaType_AudioWithName(t *testing.T) {
+	msg := &models.Message{
+		Audio: &models.Audio{FileID: "abc", FileName: "song.flac"},
+	}
+	mt, ext, err := GetMediaType(msg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if mt != MediaTypeAudio {
+		t.Errorf("MediaType = %q, want %q", mt, MediaTypeAudio)
+	}
+	if ext != ".flac" {
+		t.Errorf("ext = %q, want %q", ext, ".flac")
+	}
+}
+
+func TestGetMediaType_VideoWithName(t *testing.T) {
+	msg := &models.Message{
+		Video: &models.Video{FileID: "abc", FileName: "clip.mov"},
+	}
+	mt, ext, err := GetMediaType(msg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if mt != MediaTypeVideo {
+		t.Errorf("MediaType = %q, want %q", mt, MediaTypeVideo)
+	}
+	if ext != ".mov" {
+		t.Errorf("ext = %q, want %q", ext, ".mov")
+	}
+}
+
+func TestGetMediaType_AudioNoName(t *testing.T) {
+	msg := &models.Message{
+		Audio: &models.Audio{FileID: "abc"},
+	}
+	_, ext, err := GetMediaType(msg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if ext != ".mp3" {
+		t.Errorf("ext = %q, want %q (fallback when FileName is empty)", ext, ".mp3")
+	}
+}
+
+func TestGetMediaType_VideoNoName(t *testing.T) {
+	msg := &models.Message{
+		Video: &models.Video{FileID: "abc"},
+	}
+	_, ext, err := GetMediaType(msg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if ext != ".mp4" {
+		t.Errorf("ext = %q, want %q (fallback when FileName is empty)", ext, ".mp4")
+	}
+}
+
 func TestGetMediaType_Empty(t *testing.T) {
 	msg := &models.Message{}
 	_, _, err := GetMediaType(msg)
@@ -225,6 +283,19 @@ func TestBuildPrompt_ZeroFileSize(t *testing.T) {
 	got := BuildPrompt("/tmp/x.jpg", meta, "x")
 	if !strings.Contains(got, "File size: 0 bytes") {
 		t.Errorf("expected 'File size: 0 bytes' line, got:\n%s", got)
+	}
+}
+
+func TestBuildPrompt_CapitalizedKind(t *testing.T) {
+	for _, kind := range []string{"Photo", "Document", "Audio", "Voice", "Video"} {
+		t.Run(kind, func(t *testing.T) {
+			meta := MediaMetadata{Kind: kind, FileSize: 100}
+			got := BuildPrompt("/tmp/x", meta, "hi")
+			want := "File type: " + kind
+			if !strings.Contains(got, want) {
+				t.Errorf("expected prompt to contain %q, got:\n%s", want, got)
+			}
+		})
 	}
 }
 
@@ -411,6 +482,80 @@ func TestExtractFileRef_Video(t *testing.T) {
 	}
 	if ext != ".mp4" {
 		t.Errorf("ext = %q, want %q", ext, ".mp4")
+	}
+}
+
+func TestExtractFileRef_AudioWithName(t *testing.T) {
+	msg := &models.Message{
+		Audio: &models.Audio{
+			FileID:   "aud",
+			FileSize: 4096,
+			MimeType: "audio/flac",
+			FileName: "song.flac",
+		},
+	}
+	fileID, _, _, originalName, _, ext, ok := ExtractFileRef(msg)
+	if !ok {
+		t.Fatal("expected ok=true for audio message")
+	}
+	if fileID != "aud" {
+		t.Errorf("fileID = %q, want %q", fileID, "aud")
+	}
+	if originalName != "song.flac" {
+		t.Errorf("originalName = %q, want %q", originalName, "song.flac")
+	}
+	if ext != ".flac" {
+		t.Errorf("ext = %q, want %q (derived from FileName)", ext, ".flac")
+	}
+}
+
+func TestExtractFileRef_VideoWithName(t *testing.T) {
+	msg := &models.Message{
+		Video: &models.Video{
+			FileID:   "vid",
+			FileSize: 8192,
+			MimeType: "video/quicktime",
+			FileName: "clip.mov",
+		},
+	}
+	fileID, _, _, originalName, _, ext, ok := ExtractFileRef(msg)
+	if !ok {
+		t.Fatal("expected ok=true for video message")
+	}
+	if fileID != "vid" {
+		t.Errorf("fileID = %q, want %q", fileID, "vid")
+	}
+	if originalName != "clip.mov" {
+		t.Errorf("originalName = %q, want %q", originalName, "clip.mov")
+	}
+	if ext != ".mov" {
+		t.Errorf("ext = %q, want %q (derived from FileName)", ext, ".mov")
+	}
+}
+
+func TestExtractFileRef_AudioNoName(t *testing.T) {
+	msg := &models.Message{
+		Audio: &models.Audio{FileID: "aud"},
+	}
+	_, _, _, _, _, ext, ok := ExtractFileRef(msg)
+	if !ok {
+		t.Fatal("expected ok=true for audio message")
+	}
+	if ext != ".mp3" {
+		t.Errorf("ext = %q, want %q (fallback when FileName is empty)", ext, ".mp3")
+	}
+}
+
+func TestExtractFileRef_VideoNoName(t *testing.T) {
+	msg := &models.Message{
+		Video: &models.Video{FileID: "vid"},
+	}
+	_, _, _, _, _, ext, ok := ExtractFileRef(msg)
+	if !ok {
+		t.Fatal("expected ok=true for video message")
+	}
+	if ext != ".mp4" {
+		t.Errorf("ext = %q, want %q (fallback when FileName is empty)", ext, ".mp4")
 	}
 }
 
