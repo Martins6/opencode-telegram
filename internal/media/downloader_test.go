@@ -286,6 +286,19 @@ func TestBuildPrompt_ZeroFileSize(t *testing.T) {
 	}
 }
 
+func TestBuildPrompt_CapitalizedKind(t *testing.T) {
+	for _, kind := range []string{"Photo", "Document", "Audio", "Voice", "Video"} {
+		t.Run(kind, func(t *testing.T) {
+			meta := MediaMetadata{Kind: kind, FileSize: 100}
+			got := BuildPrompt("/tmp/x", meta, "hi")
+			want := "File type: " + kind
+			if !strings.Contains(got, want) {
+				t.Errorf("expected prompt to contain %q, got:\n%s", want, got)
+			}
+		})
+	}
+}
+
 func TestExtractFileRef_Photo(t *testing.T) {
 	msg := &models.Message{
 		Photo: []models.PhotoSize{

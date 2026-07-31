@@ -33,16 +33,19 @@ func SetConfig(c *config.Config) {
 	}
 }
 
+// mediaKindLabel returns the user-facing media type for logging and prompt
+// metadata. Case order is kept in sync with ExtractFileRef in
+// internal/media/downloader.go (Photo, Document, Audio, Voice, Video).
 func mediaKindLabel(msg *models.Message) string {
 	switch {
 	case msg.Photo != nil:
 		return "Photo"
 	case msg.Document != nil:
 		return "Document"
-	case msg.Voice != nil:
-		return "Voice"
 	case msg.Audio != nil:
 		return "Audio"
+	case msg.Voice != nil:
+		return "Voice"
 	case msg.Video != nil:
 		return "Video"
 	default:

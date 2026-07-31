@@ -10,7 +10,7 @@ Core Telegram bot that enables users to interact with OpenCode AI agent from Tel
 
   ```
   File located at: <abs-path>
-  File type: <photo|document|audio|voice|video>
+  File type: <Photo|Document|Audio|Voice|Video>
   File size: <bytes> bytes
   Original name: <name>      ← only when Telegram provides FileName
   MIME type: <mime>           ← only when Telegram provides MimeType

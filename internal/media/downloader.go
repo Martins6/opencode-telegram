@@ -117,11 +117,20 @@ func BuildPrompt(mediaPath string, meta MediaMetadata, userMessage string) strin
 	return b.String()
 }
 
+// ExtractFileRef returns the Telegram file ref for a message. The case order
+// is intentionally kept in sync with mediaKindLabel in internal/bot/handlers.go
+// (Photo, Document, Audio, Voice, Video) so the two helpers stay paired.
 func ExtractFileRef(message *models.Message) (fileID string, fileSize int64, mimeType string, originalName string, mediaType MediaType, ext string, ok bool) {
 	switch {
 	case len(message.Photo) > 0:
 		largest := message.Photo[len(message.Photo)-1]
 		return largest.FileID, int64(largest.FileSize), "", "", MediaTypePhoto, ".jpg", true
+	case message.Document != nil:
+		ext := ".bin"
+		if message.Document.FileName != "" {
+			ext = filepath.Ext(message.Document.FileName)
+		}
+		return message.Document.FileID, message.Document.FileSize, message.Document.MimeType, message.Document.FileName, MediaTypeDocument, ext, true
 	case message.Audio != nil:
 		ext := ".mp3"
 		if message.Audio.FileName != "" {
@@ -130,12 +139,6 @@ func ExtractFileRef(message *models.Message) (fileID string, fileSize int64, mim
 		return message.Audio.FileID, message.Audio.FileSize, message.Audio.MimeType, message.Audio.FileName, MediaTypeAudio, ext, true
 	case message.Voice != nil:
 		return message.Voice.FileID, message.Voice.FileSize, message.Voice.MimeType, "", MediaTypeVoice, ".ogg", true
-	case message.Document != nil:
-		ext := ".bin"
-		if message.Document.FileName != "" {
-			ext = filepath.Ext(message.Document.FileName)
-		}
-		return message.Document.FileID, message.Document.FileSize, message.Document.MimeType, message.Document.FileName, MediaTypeDocument, ext, true
 	case message.Video != nil:
 		ext := ".mp4"
 		if message.Video.FileName != "" {
