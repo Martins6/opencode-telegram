@@ -9,6 +9,7 @@ Adds two GitHub Actions workflows that wire the OpenCode `build` agent into the 
 - Adds `.github/workflows/opencode-review.yml` triggered by `pull_request` types `[opened, synchronize, reopened, ready_for_review]`; skips drafts via `if: github.event.pull_request.draft == false` so `synchronize` re-runs the same review on every new commit
 - Review job uses the same read-only permission set, the same model/agent, and a code-review-focused `prompt` covering code quality, Go idiom violations, bugs/race conditions/error-handling gaps, and security concerns (secret leakage, unsafe parsing)
 - Auth uses the OpenCode GitHub App via OIDC; the API key is supplied via `${{ secrets.MINIMAX_API_KEY }}` — the secret name is written for `minimax-coding-plan` and must be verified against `opencode auth login` / models.dev
+- Project-level `opencode.json` at the repo root pins the `minimax-coding-plan` provider and `MiniMax-M3` model so the opencode server started by the action resolves the model reliably in the runner (which has no local auth/config to fall back on); this is the same pattern that resolved [opencode#7958](https://github.com/anomalyco/opencode/issues/7958)
 - README.md gains a "GitHub Workflow" subsection under Development covering app install, secret naming, slash-command usage, and auto-review behavior
 - Workflow files mirror the official opencode docs pattern (`actions/checkout@v4` with `fetch-depth: 1` and `persist-credentials: false`, then `anomalyco/opencode/github@latest`)
 
@@ -16,4 +17,5 @@ Adds two GitHub Actions workflows that wire the OpenCode `build` agent into the 
 
 - .github/workflows/opencode.yml
 - .github/workflows/opencode-review.yml
+- opencode.json
 - README.md

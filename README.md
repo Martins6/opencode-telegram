@@ -285,10 +285,12 @@ Two GitHub Actions workflows wire the OpenCode `build` agent into this repo usin
 - `.github/workflows/opencode.yml` — triggered when `/opencode` or `/oc` appears in an issue or PR review comment.
 - `.github/workflows/opencode-review.yml` — automatically reviews every non-draft PR on open, on each new commit (`synchronize`), on reopen, and when moved out of draft.
 
+A project-level [`opencode.json`](./opencode.json) pins the `minimax-coding-plan` provider and `MiniMax-M3` model so the opencode server started by the action resolves the model reliably (the GitHub runner has no local auth/config to fall back on).
+
 To enable them:
 
 1. Install the [OpenCode GitHub App](https://github.com/apps/opencode-agent) on this repository.
-2. Add the provider's API key under *Settings → Secrets and variables → Actions*. The workflows reference it as `MINIMAX_API_KEY` — confirm the exact env var name against `opencode auth login` output or [models.dev](https://models.dev/) for the `minimax-coding-plan` provider, and adjust both `opencode.yml` and `opencode-review.yml` if it differs.
+2. Add the provider's API key under *Settings → Secrets and variables → Actions* as `MINIMAX_API_KEY` — that env var name matches the `minimax-coding-plan` provider in [models.dev](https://models.dev/).
 
 Usage:
 
