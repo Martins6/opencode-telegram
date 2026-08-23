@@ -278,6 +278,25 @@ For system-wide installs (`/usr/local/bin`) the replace may hit a read-only file
 - `github.com/spf13/viper` - Configuration
 - `github.com/google/uuid` - UUID generation
 
+### GitHub Workflow
+
+Two GitHub Actions workflows wire the OpenCode `build` agent into this repo using the official [`anomalyco/opencode/github`](https://opencode.ai/docs/github/) action:
+
+- `.github/workflows/opencode.yml` — triggered when `/opencode` or `/oc` appears in an issue or PR review comment.
+- `.github/workflows/opencode-review.yml` — automatically reviews every non-draft PR on open, on each new commit (`synchronize`), on reopen, and when moved out of draft.
+
+A project-level [`opencode.json`](./opencode.json) pins the `minimax-coding-plan` provider and `MiniMax-M3` model so the opencode server started by the action resolves the model reliably (the GitHub runner has no local auth/config to fall back on).
+
+To enable them:
+
+1. Install the [OpenCode GitHub App](https://github.com/apps/opencode-agent) on this repository.
+2. Add the provider's API key under *Settings → Secrets and variables → Actions* as `MINIMAX_API_KEY` — that env var name matches the `minimax-coding-plan` provider in [models.dev](https://models.dev/).
+
+Usage:
+
+- Comment `/opencode <instruction>` (or `/oc`) on any issue or PR to invoke the agent.
+- Open a PR to get an automatic code review; every new push re-runs the review on the latest diff.
+
 ## License
 
 MIT

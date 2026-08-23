@@ -1,0 +1,11 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "minimax-coding-plan": {
+      "name": "MiniMax Coding Plan",
+      "models": {
+        "MiniMax-M3": {}
+      }
+    }
+  }
+}
