@@ -1,0 +1,38 @@
+name: opencode-review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: read
+      issues: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Run OpenCode review
+        uses: anomalyco/opencode/github@latest
+        env:
+          # NOTE: confirm the env var name against `opencode auth login` output
+          # or models.dev for the `minimax-coding-plan` provider and adjust
+          # the secret name in repo Settings → Secrets and variables → Actions.
+          MINIMAX_API_KEY: ${{ secrets.MINIMAX_API_KEY }}
+        with:
+          model: minimax-coding-plan/MiniMax-M3
+          agent: build
+          prompt: |
+            Review this pull request:
+            - Check for code quality issues and Go idiom violations.
+            - Look for potential bugs, race conditions, or error-handling gaps.
+            - Suggest concrete improvements with file/line references.
+            - Flag any security concerns (secret leakage, unsafe parsing, etc.).
